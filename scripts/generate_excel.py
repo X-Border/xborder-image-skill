@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Amazon Listing + Image Prompt Excel Generator
-Called by the amazon-listing-generator skill after producing copy.
+Marketplace Listing + Image Prompt Excel Generator
+Called by the xborder-image-skill after producing copy.
 Usage: python3 generate_excel.py --product "..." --title "..." ... --output "path.xlsx"
 """
 

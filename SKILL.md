@@ -1,30 +1,51 @@
 ---
-name: amazon-listing-generator
+name: xborder-image-skill
+version: "1.0.0"
 description: >
-  Generate Amazon listing assets from a product photo and selling points:
-  title, five bullets, description, backend search terms, image prompt plan,
-  competitor-aware secondary-image strategy, optional secondary image generation,
-  and an Excel summary. Use when the user uploads or describes a product and
-  mentions Amazon, listing, 亚马逊, 上架, 主图, 副图, 卖点, product images,
-  "帮我做listing", "生成产品图", "Amazon listing", "我要上架",
-  "帮我写卖点", "只生成Listing文案", "看看别人怎么弄",
-  "参考竞品", "参考Amazon前几名", "参考图", "参考图片", "参考样式",
-  "照这个风格", "按这个感觉", "尺寸图", "功能图", "卖点图",
-  "场景图", "细节图", "局部放大图", "对比图", "步骤图", "包装图",
-  "详情图", "详情页", "A+页面", "A+ Content", "EBC", or asks to
-  regenerate a specific Amazon listing image slot such as AS-05 or detail-page
-  module such as AD-03.
+  Generate multi-marketplace e-commerce listing assets from a product photo and selling
+  points — listing copy, listing/marketing images, and an Excel summary — for Amazon,
+  Temu, and Noon (Middle East). Images render through the X-Border image tools. Use when
+  the user uploads or describes a product and mentions a marketplace or a listing task:
+  Amazon / 亚马逊, Temu / 拼多多海外, Noon / 中东 / noon.com, listing, 上架, 主图, 副图,
+  卖点, product images, "帮我做listing", "生成产品图", "生成主图", "生成副图", "整套上架图",
+  "我要上架", "帮我写卖点", "只生成Listing文案", "看看别人怎么弄", "参考竞品",
+  "参考Amazon前几名", "参考图", "参考图片", "参考样式", "照这个风格", "按这个感觉",
+  "尺寸图", "功能图", "卖点图", "场景图", "细节图", "局部放大图", "对比图", "步骤图",
+  "包装图", "白底图", "详情图", "详情页", "A+页面", "A+ Content", "EBC", "size chart",
+  "英语阿拉伯语", or asks to regenerate a specific listing image slot such as Amazon
+  AS-05 / AD-03, Temu TS-04, or Noon NS-05.
 ---
 
-# Amazon Listing Generator
+# X-Border Listing Image Skill
 
-From one white-background photo plus 2-3 selling points, generate an Amazon
-listing kit: listing copy, image prompts, optional secondary images, and an
-Excel summary.
+From one white-background photo plus 2-3 selling points, generate a marketplace listing
+kit: listing copy, image prompts, rendered listing/marketing images, and an Excel
+summary. Multi-marketplace: **Amazon** is the reference platform (fully detailed in this
+file); **Temu** and **Noon** are supported via `references/platforms/{temu,noon}.md`.
+Images render through the X-Border image tools (`references/image-backend.md`) — this
+skill holds no image keys.
 
 ---
 
 ## STEP 0 — Choose execution mode and read inputs
+
+**Platform first.** Detect the target marketplace from the request (default **Amazon**):
+Amazon / 亚马逊, Temu / 拼多多海外, Noon / 中东 / noon.com. The flow below — modes,
+product reading, image backend, Excel — is shared across marketplaces. What differs per
+platform is **copy rules**, **image slot taxonomy**, and the image backend's
+**`marketplace`/`preset` knob**:
+
+- **Amazon** — rules are inlined in this file: STEP 1 copy, STEP 3 AS slots, STEP 3B AD
+  modules. Backend knob `marketplace: amazon` / `preset: amazon_standard`.
+- **Temu** — follow `references/platforms/temu.md`: shorter concise copy, TM/TS slots,
+  `marketplace: temu` / `preset: marketplace_basic`. Adjust STEP 1/STEP 2/STEP 3 to that profile.
+- **Noon** — follow `references/platforms/noon.md`: bilingual EN/AR, Middle-East
+  compliance, NM/NS slots, `marketplace: noon` / `preset: noon_standard`.
+
+If the user does not name a marketplace, default to Amazon (or ask when ambiguous). The
+image-craft principles (thumbnail legibility, real product match, no AI-poster artifacts)
+and the X-Border image backend (`references/image-backend.md`) are the same for every
+platform. See `references/platforms/README.md` for the full reuse model.
 
 Infer the mode from the user request:
 
@@ -105,6 +126,30 @@ folded" version. If it shows an unfolded state and no folding mechanism is
 visible or provided by the user, do not invent a folded version. Preserve the
 product's real proportions, width, height, tube spacing, hinge/lock positions,
 and structural relationships.
+
+**Source-image hygiene (shared, all platforms).** Sourcing photos (1688, Taobao,
+supplier images) often have baked-in marks that must NOT appear on a marketplace
+listing. Inspect the uploaded photo and classify any baked-in text/graphics:
+
+- **Overlay marks — always remove.** Watermarks, shop/marketplace logos (1688 / 淘宝 /
+  拼多多 / store 水印), promo badges (促销角标 / 满减 / 包邮), price tags, and Chinese
+  marketing overlays are NOT part of the product. Instruct the image model to remove
+  them and reconstruct the area cleanly.
+- **Text physically on the product / packaging — handle by policy.** Chinese printed on
+  the product body, buttons, or labels: neutralise it or replace with the target-market
+  language; do not leave Chinese on an Amazon/Temu/Noon image. For packaging / "what's
+  in the box" shots, prefer neutral or target-language packaging rather than showing
+  Chinese packaging.
+- **Output image text = marketplace language only** (Amazon/Temu → English default,
+  Noon → EN/AR), per the "Visible image text language rules" below. Never carry Chinese
+  into a non-CN-marketplace image unless the user explicitly asks for a CN platform.
+- **Two-pass when the source is dirty.** If the photo has a heavy watermark or lots of
+  baked-in Chinese, first render a cleaned base image (remove watermark/overlay text,
+  keep the product on a clean background), then use that cleaned image as the reference
+  for the actual slots. See `references/image-backend.md` → "Source-image hygiene".
+- **Honest limit:** edit models cannot always fully erase large watermarks or text
+  printed on the product. When it can't be cleaned reliably, say so and recommend a
+  clean white-background source photo. Do not promise a perfectly clean result.
 
 Read selling points verbatim. Identify: core benefit, material claim,
 target user, any specs or numbers.
@@ -455,6 +500,12 @@ Execution flow:
 
 ## STEP 1 — Generate Listing copy
 
+> The copy rules below are the **Amazon** profile. For **Temu** or **Noon**, apply that
+> platform's copy rules from `references/platforms/{temu,noon}.md` instead (Temu: short
+> concise title + 3–6 selling points, no 5-bullet/1500-char/250-byte format; Noon:
+> bilingual EN/AR title + 3–5 highlights + category attributes), then continue the
+> shared flow.
+
 **Title rules:**
 - `[Brand] [Core Keyword] [Key Attribute] – [Differentiator], [Context]`
 - Hard limit: 150 characters. Primary keyword in first 80 chars.
@@ -486,7 +537,11 @@ Execution flow:
 
 ## STEP 2 — Display listing
 
-Output in this format so each section is easy to copy:
+Output in this format so each section is easy to copy. The template below is Amazon's;
+for Temu use header `🛒  TEMU LISTING · [Product]` with Title / Selling points (3–6) /
+Description / Specs / Keywords, and for Noon use `🛒  NOON LISTING · [Product]` with
+Title (EN, + AR if provided) / Highlights (3–5) / Description / Attributes / Keywords
+(see the platform profile).
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -522,7 +577,15 @@ Build prompt text for the selected AS slots before generating images. For full
 only the 5-7 slots that answer real buyer questions. Include this product
 consistency rule in every prompt:
 > "Use the uploaded white-background product photo as exact visual reference.
-> Product shape, colour, proportions, and design details must match precisely."
+> Product shape, colour, proportions, and design details must match precisely.
+> Do NOT reproduce any watermark, overlay/promo text, shop or marketplace logo, price
+> tag, or Chinese marketing graphics from the source image — remove them and keep only
+> the real product. All visible text in the output is [marketplace language]."
+
+The "match precisely" instruction covers the **product** (shape/colour/proportions/
+design/material) only — it must not be read as an instruction to preserve source
+watermarks, overlay text, marketplace tags, or Chinese promo graphics. See STEP 0
+"Source-image hygiene".
 
 Do not default to a text-heavy collage. For production assets, generate separate
 secondary images unless the user explicitly asks for a storyboard or direction
@@ -579,9 +642,36 @@ Visual intensity requirement:
   magnified mechanisms, pressure/contact cues, or comparison states to make the
   benefit feel active and understandable.
 
-Call image generation when the user requested the full kit, image set only, or a
-specific image slot. If image generation is unavailable, output the prompts and
-still write them into the Excel file when Excel output was requested.
+### Rendering: call the X-Border image backend
+
+The `$imagegen [brief]` blocks below are backend-agnostic creative briefs. To actually
+render them, call the **X-Border image MCP tools** — full contract, exact params, and
+the platform `marketplace`/`preset` map are in `references/image-backend.md`. The skill
+never holds any image key; X-Border's server does.
+
+Pick the tool by intent (details in `image-backend.md`):
+
+- **Per-slot art direction (default):** render each selected slot with `generateImage`
+  — `prompt` = the slot's `$imagegen` brief (drop the leading `$imagegen`),
+  `referenceImageUrl` = the product photo URL, optional `model`
+  (`nano-banana-pro` default / `seedream-4.5` / `qwen-edit-multiangle`). One call per
+  slot. This preserves the detailed per-slot prompts that are this skill's whole point.
+- **One-click full set (fast):** call `generateListingImageSet` once with the **active
+  platform's** `preset`/`marketplace` (Amazon → `amazon_standard`/`amazon`, Noon →
+  `noon_standard`/`noon`, Temu → `marketplace_basic`/`temu`) when the user wants the
+  whole set fast. Counts come from the preset, not the slot selection — say so first.
+- **Custom counts:** `generateProductMarketingImages` with explicit `sellerTypeNum` /
+  `sceneTypeNum` / … when the user names quantities.
+
+Uploaded product photos arrive as URLs (`<image url="...">`) — pass them straight to
+`referenceImageUrl` / `imageUrls`, never base64. The `$imagegen` AS-slot briefs below are
+Amazon's; for Temu/Noon use that platform's slot taxonomy (TM/TS, NM/NS) and the same
+rendering path.
+
+Call the backend when the user requested the full kit, image set only, or a specific
+image slot. **If the `x-border` MCP tools are unavailable**, fall back: output the
+prompt text and still write it into the Excel file when Excel output was requested.
+Never claim an image was generated when no tool was called.
 
 **AS-02 — 核心卖点图 (Key Benefits)**
 ```
@@ -899,7 +989,7 @@ Use the script from this skill's `scripts/` directory. Pass `--prompts-json`
 when image prompts were produced.
 
 ```bash
-python3 /path/to/amazon-listing-generator/scripts/generate_excel.py \
+python3 /path/to/xborder-image-skill/scripts/generate_excel.py \
   --product "[product name]" \
   --title "[title]" \
   --b1 "[bullet1]" --b2 "[bullet2]" --b3 "[bullet3]" \
@@ -967,6 +1057,8 @@ associatedWith / instanceOf / preconditionOf / enabledBy
 - [ ] A+ specs are anchored to visible product parts or floor/room context, such as footprint on the base or load proof through the frame
 - [ ] User style constraints such as "家庭风格" and "暖色" are visible in the prompt
 - [ ] Visible image text language follows user request or marketplace assumption
+- [ ] No source watermark, shop/marketplace logo, promo badge, price tag, or Chinese overlay text carried from the uploaded photo into the output (removed per STEP 0 "Source-image hygiene")
+- [ ] Output images contain no Chinese text on a non-CN marketplace (Amazon/Temu → English, Noon → EN/AR); Chinese on the product/packaging is neutralised or replaced
 - [ ] Excel generation matches requested mode; copy-only requests do not write files unless export is requested
 - [ ] AM-01 warning shown
 - [ ] Excel file written only when the user requested export or full-kit output
