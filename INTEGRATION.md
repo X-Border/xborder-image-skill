@@ -108,7 +108,7 @@ Noon 整套上架图,英语阿拉伯语
 | 技能商店里看不到这个 skill | `XBORDER_MARKET_URL` 没配;或市场里 status 不是 `published`;或没「重同步」 |
 | 装了但聊天里不触发 | 描述没命中触发词 → 换更明确说法(带平台名 + "生成副图/上架图");确认对话开了 xborder provider |
 | 图不生成、只回提示词 | `x-border` MCP 没连(让用户重新 SSO 登录);或图片供应商没配(`WORKER_BASE_URL` + `REPLICATE_API_TOKEN`,或 `LINKFOX_*`) |
-| 报错 "x-border-ai 出图需要参考图" | 没上传产品图 URL;上传后再试,或临时把 `XBORDER_IMAGE_DRAW_PROVIDER=linkfox` |
+| 报错 "x-border-ai 出图需要参考图" | `generateImage` 是编辑模型必须带参考图;纯文生/无产品图请改用 `generateImageFromText`(参考图可选)。或上传产品图 URL 后再试,或临时把 `XBORDER_IMAGE_DRAW_PROVIDER=linkfox` |
 | 成图带中文水印 / 1688 文字 | 源图太脏 → 走两遍法(先出干净底图再做槽位);大水印去不干净时换干净白底原图(见 SKILL.md STEP 0「Source-image hygiene」) |
 | 已安装用户拿不到更新 | 市场是快照,让用户重新安装一次 |
 | 成图出现中文(非 CN 平台) | 已由净化规则约束,若仍出现是模型残留 → 重出或换模型 |

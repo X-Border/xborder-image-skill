@@ -1,6 +1,6 @@
 ---
 name: xborder-image-skill
-version: "1.0.0"
+version: "1.1.0"
 description: >
   Generate multi-marketplace e-commerce listing assets from a product photo and selling
   points — listing copy, listing/marketing images, and an Excel summary — for Amazon,
@@ -662,6 +662,14 @@ Pick the tool by intent (details in `image-backend.md`):
   whole set fast. Counts come from the preset, not the slot selection — say so first.
 - **Custom counts:** `generateProductMarketingImages` with explicit `sellerTypeNum` /
   `sceneTypeNum` / … when the user names quantities.
+- **No product photo / pure text-to-image:** use `generateImageFromText` when there is
+  **no** reference product photo, or for a scene / background / concept image from text
+  alone — its reference is **optional** (default `seedream-4.5`). `generateImage`'s
+  reference is required; this is the no-reference path.
+- **Structured analysis first (识图):** optionally call `analyzeProductImage` to extract
+  structured 卖点 + a ready `generationPrompt` from the product photo, then feed that
+  `generationPrompt` into a slot brief or `generateImageFromText`. Use when the user says
+  『分析这张图的卖点』or『照这张图做类似的图』.
 
 Uploaded product photos arrive as URLs (`<image url="...">`) — pass them straight to
 `referenceImageUrl` / `imageUrls`, never base64. The `$imagegen` AS-slot briefs below are

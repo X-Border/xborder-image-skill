@@ -80,6 +80,18 @@ clean white-background source photo — do not claim a perfectly clean output.
 
 4. **Single slot / "参考这张重做".** Use `generateImage` (tool 1) for that one slot.
 
+5. **Pure text-to-image / 无参考产品图 — use `generateImageFromText`.** When there is **no** product
+   photo, or the user wants a scene / background / concept image from text alone, use
+   **`generateImageFromText`** — its reference image is **optional**. This fills the gap where the
+   default `generateImage` (tool 1) is an edit model and **requires** `referenceImageUrl` (it errors
+   without one). With a product photo, prefer tool 1 for fidelity; without one, use this.
+
+6. **Structured product analysis — use `analyzeProductImage`.** To turn a product photo into
+   structured e-commerce attributes (品类 / 主体 / 卖点 / 人群 / 风格 / 材质 / 场景 / 构图 / 关键词)
+   plus a ready-to-render `generationPrompt`, call **`analyzeProductImage`** first, then feed the
+   returned `generationPrompt` into `generateImageFromText` or a per-slot brief. Useful when the user
+   says『分析这张图的卖点』or『照这张图做类似的图』.
+
 ## Tool reference (exact params)
 
 ### `generateImage` (returns image directly, or a `taskToken` to poll)
@@ -119,6 +131,29 @@ Default provider **x-border-ai** is synchronous and requires a `referenceImageUr
 | `language` | string | e.g. 英语 / 阿拉伯语 / 英语阿拉伯语 |
 | `salesRegion` | string | e.g. 中东 / 北美 |
 | `brandColor` | `#RRGGBB` | optional |
+
+### `generateImageFromText` (text-to-image, reference **optional** — returns image directly)
+Same x-border-ai backend as `generateImage`, but the reference image is optional — this is the
+"no product photo / pure text-to-image" path. Default model `seedream-4.5` (best pure text-to-image,
+honours aspect). Bills per image, same as `generateImage`.
+| param | type | notes |
+|---|---|---|
+| `prompt` | string ≤2000 | required; the generation prompt |
+| `referenceImageUrls` | url[] 1–4 | optional; omit for pure text-to-image, include to preserve subject/style |
+| `scale` | `1:1` \| `16:9` \| `9:16` | default `1:1` (honoured on seedream-4.5) |
+| `outputNum` | 1–4 | default 1; bills per image |
+| `model` | `seedream-4.5` \| `nano-banana-pro` \| `qwen-edit-multiangle` | default `seedream-4.5` |
+
+### `analyzeProductImage` (识图 · vision → structured e-commerce JSON)
+Reads product photos and returns structured attributes + a ready `generationPrompt` you can feed
+straight into `generateImageFromText` / a slot brief. Bills 1 credit per call.
+| param | type | notes |
+|---|---|---|
+| `imageUrls` | url[] 1–4 | required product photos |
+| `focus` | string ≤200 | optional emphasis, e.g. 卖点 / 材质 / 包装细节 / 合规 |
+| `model` | `google/gemini-2.5-flash` (default) \| `google/gemini-2.5-pro` \| `openai/gpt-4o` \| `anthropic/claude-3.5-sonnet` | vision model |
+
+Response: `{ model, analysis: { category, subject, sellingPoints[], targetAudience, style, material, scene, composition, keywords[], generationPrompt } }`. All nine fields plus `generationPrompt` are always present. Never claim analysis ran when no tool was called.
 
 ## Platform → preset / marketplace map (the only per-platform knob)
 
