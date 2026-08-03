@@ -1,6 +1,6 @@
 ---
 name: xborder-image-skill
-version: "1.1.0"
+version: "1.2.0"
 description: >
   Generate multi-marketplace e-commerce listing assets from a product photo and selling
   points — listing copy, listing/marketing images, and an Excel summary — for Amazon,
@@ -13,7 +13,9 @@ description: >
   "尺寸图", "功能图", "卖点图", "场景图", "细节图", "局部放大图", "对比图", "步骤图",
   "包装图", "白底图", "详情图", "详情页", "A+页面", "A+ Content", "EBC", "size chart",
   "英语阿拉伯语", or asks to regenerate a specific listing image slot such as Amazon
-  AS-05 / AD-03, Temu TS-04, or Noon NS-05.
+  AS-05 / AD-03, Temu TS-04, or Noon NS-05. Also use for ordinary product-photo edits:
+  改图, 编辑图片, 换背景, 换场景, 增加/减少商品数量, 几件装, pcs, 横向/纵向摆放,
+  修改图片文字, remove background, change scene, product quantity, or image text.
 ---
 
 # X-Border Listing Image Skill
@@ -29,18 +31,55 @@ skill holds no image keys.
 
 ## STEP 0 — Choose execution mode and read inputs
 
+### STEP 0A — Preflight risky edits before any image tool call
+
+Apply this gate to the **user's original request**, before rewriting it into a polished
+image prompt. Do not treat your own inferred prompt as user confirmation.
+
+First distinguish two different meanings of count:
+
+- **Output image count**: "出 5 张副图" means five separate generated files/slots.
+- **Product instance count**: "改成 3pcs" means three sellable product instances inside
+  one image. Never translate one count into the other.
+
+Ask one concise confirmation question and wait for the user's next message before calling
+`generateImage` or `generateImageFromText` when a product-instance count edit contains
+any of the following:
+
+- multiple colours, variants, sizes, or SKUs;
+- visual references such as 左边/右边/这款/那款/前者/后者;
+- relative changes such as 再放一个/多放一个/另加一个/one more/add another;
+- a conflict between the stated total and the sum of per-variant quantities.
+
+The confirmation must state each variant quantity, total quantity, layout, and image-text
+change. Example:
+
+> 我理解为保留黑色款 1 个，将白色款增加到 2 个，共 3 个横向排列，并把文字改为
+> “3pcs”。是否正确？
+
+After confirmation, copy all confirmed facts into the tool prompt explicitly: `black = 1`,
+`white = 2`, `total = 3`, horizontal layout, and the exact text change. Never silently
+substitute a different variant. If the user corrects any value, use the correction.
+
+Do **not** add confirmation to ordinary unambiguous requests such as replacing a
+background, changing a scene, adding an external shadow, or editing text without changing
+the number of sellable products.
+
+If `analyzeProductImage` fails or returns no analysis, treat that as no visual evidence.
+Do not guess product facts from the URL, filename, model memory, or similar products. Ask
+for another accessible image or continue only with facts the user explicitly supplied.
+
 **Platform first.** Detect the target marketplace from the request (default **Amazon**):
 Amazon / 亚马逊, Temu / 拼多多海外, Noon / 中东 / noon.com. The flow below — modes,
 product reading, image backend, Excel — is shared across marketplaces. What differs per
-platform is **copy rules**, **image slot taxonomy**, and the image backend's
-**`marketplace`/`preset` knob**:
+platform is **copy rules** and **image slot taxonomy**:
 
 - **Amazon** — rules are inlined in this file: STEP 1 copy, STEP 3 AS slots, STEP 3B AD
-  modules. Backend knob `marketplace: amazon` / `preset: amazon_standard`.
-- **Temu** — follow `references/platforms/temu.md`: shorter concise copy, TM/TS slots,
-  `marketplace: temu` / `preset: marketplace_basic`. Adjust STEP 1/STEP 2/STEP 3 to that profile.
+  modules.
+- **Temu** — follow `references/platforms/temu.md`: shorter concise copy and TM/TS slots.
+  Adjust STEP 1/STEP 2/STEP 3 to that profile.
 - **Noon** — follow `references/platforms/noon.md`: bilingual EN/AR, Middle-East
-  compliance, NM/NS slots, `marketplace: noon` / `preset: noon_standard`.
+  compliance, and NM/NS slots.
 
 If the user does not name a marketplace, default to Amazon (or ask when ambiguous). The
 image-craft principles (thumbnail legibility, real product match, no AI-poster artifacts)
@@ -645,8 +684,8 @@ Visual intensity requirement:
 ### Rendering: call the X-Border image backend
 
 The `$imagegen [brief]` blocks below are backend-agnostic creative briefs. To actually
-render them, call the **X-Border image MCP tools** — full contract, exact params, and
-the platform `marketplace`/`preset` map are in `references/image-backend.md`. The skill
+render them, call the **X-Border image MCP tools** — the current contract and exact
+parameters are in `references/image-backend.md`. The skill
 never holds any image key; X-Border's server does.
 
 Pick the tool by intent (details in `image-backend.md`):
@@ -656,12 +695,8 @@ Pick the tool by intent (details in `image-backend.md`):
   `referenceImageUrl` = the product photo URL, optional `model`
   (`nano-banana-pro` default / `seedream-4.5` / `qwen-edit-multiangle`). One call per
   slot. This preserves the detailed per-slot prompts that are this skill's whole point.
-- **One-click full set (fast):** call `generateListingImageSet` once with the **active
-  platform's** `preset`/`marketplace` (Amazon → `amazon_standard`/`amazon`, Noon →
-  `noon_standard`/`noon`, Temu → `marketplace_basic`/`temu`) when the user wants the
-  whole set fast. Counts come from the preset, not the slot selection — say so first.
-- **Custom counts:** `generateProductMarketingImages` with explicit `sellerTypeNum` /
-  `sceneTypeNum` / … when the user names quantities.
+- **Image/full set:** select the valuable platform slots, state the output-image count,
+  then call `generateImage` once per slot. The current MCP has no batch preset tool.
 - **No product photo / pure text-to-image:** use `generateImageFromText` when there is
   **no** reference product photo, or for a scene / background / concept image from text
   alone — its reference is **optional** (default `seedream-4.5`). `generateImage`'s

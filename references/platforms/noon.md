@@ -3,15 +3,13 @@
 Noon is the leading Middle East marketplace (UAE, KSA, Egypt). It is catalog- and
 attribute-driven, bilingual **English + Arabic**, and culturally sensitive. Reuse the
 shared flow (SKILL.md STEP 0 modes, image backend, Excel) and image-craft principles;
-only the copy rules, slot taxonomy, backend knob, and compliance below are Noon-specific.
+only the copy rules, slot taxonomy, and compliance below are Noon-specific.
 
-## Backend knob (for `generateListingImageSet`)
-- `marketplace: "noon"`
-- `preset: "noon_standard"` (1 seller / 2 scene / 2 close-up / 1 white close-up /
-  3 white-bg) — Noon leans on clean white-background gallery shots.
-- `language: "英语阿拉伯语"` (English + Arabic) and `salesRegion: "中东"` when the user
-  targets the GCC; adjust `language` to `"英语"` only when Arabic is not needed.
-- Per-slot renders: `generateImage`. See `references/image-backend.md`.
+## Rendering defaults
+- Render each selected slot with one `generateImage` call. Noon generally benefits from
+  more clean white-background gallery slots.
+- Use English + Arabic visible text for GCC listings unless the user requests English only.
+- See `references/image-backend.md` for the current tool contract.
 
 ## Copy rules (Noon)
 - **Title**

@@ -5,11 +5,10 @@ Amazon is the fully-detailed platform. Its copy rules and per-slot image briefs 
 `references/amazon-image-strategy.md`. This file is the concise profile that Temu / Noon
 are modeled on.
 
-## Backend knob (for `generateListingImageSet`)
-- `marketplace: "amazon"`
-- `preset: "amazon_standard"` (3 seller / 2 scene / 1 close-up / 1 white close-up /
-  2 white-bg / 1 A+)
-- Per-slot renders use `generateImage` with the AS/AD brief — see `references/image-backend.md`.
+## Rendering defaults
+- Render each selected AS/AD slot with one `generateImage` call.
+- Use `scale: "1:1"` for carousel images unless the user requests another ratio.
+- See `references/image-backend.md` for the current tool contract.
 
 ## Copy rules
 - **Title** ≤150 chars; primary keyword within first 80; Capitalise Every Main Word;

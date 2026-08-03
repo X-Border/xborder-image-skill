@@ -4,17 +4,16 @@
 
 支持 **Amazon(参考实现,最完整)/ Temu / Noon(中东)**。图片通过 **X-Border 图片工具**(MCP)渲染 —— 本 skill **不持有任何图片 key**,凭证在 X-Border 服务端。
 
-> skill 标识(frontmatter `name`)与本地目录均为 `xborder-image-skill`。GitHub 仓库暂仍为
-> `amazon-listing-generator-skill`(可在 GitHub 上改名,老 URL 会自动重定向,不影响功能);
-> 登记市场时 `repo` 用当前真实仓库名,`identifier` 用 `xborder-image-skill`。
+> skill 标识(frontmatter `name`)、本地目录与 GitHub 仓库均为
+> `xborder-image-skill`。市场迁移仓库时保留既有 identifier,避免已安装副本失联。
 
 ## 多平台支持
 
-| 平台 | 文案规范 | 图片槽位 | 后端 knob(marketplace / preset) | 档案 |
-|---|---|---|---|---|
-| **Amazon** | 标题≤150 / 5×(150-200)五点 / 1500-2000 描述 / 250B 后台词 | AM-01 主图, AS-02~09 副图, AD-01~07 A+ | `amazon` / `amazon_standard` | 本文件 STEP 1/3/3B + `references/platforms/amazon.md` |
-| **Temu** | 精简标题 / 3-6 卖点 / 短描述 / 属性驱动 | TM-01 主图, TS-02~07 | `temu` / `marketplace_basic` | `references/platforms/temu.md` |
-| **Noon** | 双语 EN/AR 标题 / 3-5 亮点 / 类目属性 | NM-01 主图, NS-02~07 | `noon` / `noon_standard` | `references/platforms/noon.md` |
+| 平台 | 文案规范 | 图片槽位 | 档案 |
+|---|---|---|---|
+| **Amazon** | 标题≤150 / 5×(150-200)五点 / 1500-2000 描述 / 250B 后台词 | AM-01 主图, AS-02~09 副图, AD-01~07 A+ | 本文件 STEP 1/3/3B + `references/platforms/amazon.md` |
+| **Temu** | 精简标题 / 3-6 卖点 / 短描述 / 属性驱动 | TM-01 主图, TS-02~07 | `references/platforms/temu.md` |
+| **Noon** | 双语 EN/AR 标题 / 3-5 亮点 / 类目属性 | NM-01 主图, NS-02~07 | `references/platforms/noon.md` |
 
 共享部分(执行模式、产品解析、图片后端、图片工艺原则、Excel)所有平台复用;每个平台只写自己的**文案规则 + 槽位 + 合规**。加新平台见 `references/platforms/README.md`。
 
@@ -23,8 +22,8 @@
 `references/image-backend.md` 定义了如何把图片 brief 变成真实图片:
 
 - **逐张出图(默认)**:`generateImage`(`prompt`=槽位 brief,`referenceImageUrl`=产品图 URL,可选 `model`:`nano-banana-pro` 默认 / `seedream-4.5` / `qwen-edit-multiangle`)。
-- **一键整套**:`generateListingImageSet`(按平台 `preset`/`marketplace`)。
-- **自定义数量**:`generateProductMarketingImages`。
+- **整套图片**:按平台槽位规划后,每个槽位调用一次 `generateImage`。
+- **无参考图**:`generateImageFromText`;识图分析:`analyzeProductImage`。
 - 无 MCP 工具时降级为只输出提示词。上传图以 URL 传入,非 base64。
 
 ## 文件结构
@@ -54,7 +53,7 @@ xborder-image-skill/
 **Codex(兼容):**
 
 ```bash
-git clone https://github.com/shmilyvidian/amazon-listing-generator-skill.git xborder-image-skill
+git clone https://github.com/X-Border/xborder-image-skill.git
 mkdir -p ~/.codex/skills
 cp -R xborder-image-skill ~/.codex/skills/xborder-image-skill
 ```

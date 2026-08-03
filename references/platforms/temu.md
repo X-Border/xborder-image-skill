@@ -4,14 +4,11 @@ Temu is a cross-border discount marketplace (US-first, expanding globally), mobi
 and price-driven. Listings are cleaner and shorter than Amazon: concise title, a few
 punchy selling points, attribute-heavy specs, and clean square images. Reuse the shared
 flow (SKILL.md STEP 0 modes, image backend, Excel) and the image-craft principles; only
-the copy rules, slot taxonomy, and backend knob below are Temu-specific.
+the copy rules and slot taxonomy below are Temu-specific.
 
-## Backend knob (for `generateListingImageSet`)
-- `marketplace: "temu"`
-- `preset: "marketplace_basic"` (2 seller / 1 scene / 1 close-up / 1 white close-up /
-  1 white-bg). Use `premium_marketing` when the user wants a richer set.
-- `aspectRatio: "1:1"` by default — Temu is mobile-first and square-carousel.
-- Per-slot renders: `generateImage`, `scale: "1:1"`. See `references/image-backend.md`.
+## Rendering defaults
+- Temu is mobile-first: render each selected slot with `generateImage`, `scale: "1:1"`.
+- See `references/image-backend.md` for the current tool contract.
 
 ## Copy rules (Temu)
 Temu ≠ Amazon: no fixed 5×(150–200) bullets, no 1500-char description, no 250-byte
