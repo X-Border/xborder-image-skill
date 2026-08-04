@@ -21,7 +21,9 @@ public URL is available, ask the user to upload the image first.
 Apply `SKILL.md` STEP 0A to the **original user request** before rewriting a prompt. For a
 product-instance quantity edit involving multiple variants, visual references, relative
 changes, or conflicting totals, ask one confirmation question and wait. Do not call a
-billable image tool in the same turn as the question.
+billable image tool in the same turn as the question. This is a hard stop: do not call
+`analyzeProductImage` either, and do not continue after wording the confirmation. Only a
+new user message can confirm the interpretation.
 
 After confirmation, the tool prompt must explicitly repeat every confirmed fact, for
 example: `black variant = exactly 1; white variant = exactly 2; total = exactly 3;

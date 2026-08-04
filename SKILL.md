@@ -1,6 +1,6 @@
 ---
 name: xborder-image-skill
-version: "1.2.0"
+version: "1.2.1"
 description: >
   Generate multi-marketplace e-commerce listing assets from a product photo and selling
   points — listing copy, listing/marketing images, and an Excel summary — for Amazon,
@@ -42,14 +42,20 @@ First distinguish two different meanings of count:
 - **Product instance count**: "改成 3pcs" means three sellable product instances inside
   one image. Never translate one count into the other.
 
-Ask one concise confirmation question and wait for the user's next message before calling
-`generateImage` or `generateImageFromText` when a product-instance count edit contains
-any of the following:
+**HARD STOP.** Ask one concise confirmation question and wait for the user's **next
+message** when a product-instance count edit contains any of the following:
 
 - multiple colours, variants, sizes, or SKUs;
 - visual references such as 左边/右边/这款/那款/前者/后者;
 - relative changes such as 再放一个/多放一个/另加一个/one more/add another;
 - a conflict between the stated total and the sum of per-variant quantities.
+
+Until that next user message explicitly confirms or corrects the quantities, do not call
+**any** image tool, including `analyzeProductImage`, `generateImage`, or
+`generateImageFromText`. Do not inspect the image first. Do not say "让我确认" and then
+continue in the same turn. Your entire response for that turn is the confirmation
+question; then stop. A visually obvious arrangement, a successful image analysis, or a
+reasonable inference does not count as user confirmation.
 
 The confirmation must state each variant quantity, total quantity, layout, and image-text
 change. Example:
@@ -57,7 +63,8 @@ change. Example:
 > 我理解为保留黑色款 1 个，将白色款增加到 2 个，共 3 个横向排列，并把文字改为
 > “3pcs”。是否正确？
 
-After confirmation, copy all confirmed facts into the tool prompt explicitly: `black = 1`,
+After a new user message confirms the interpretation, copy all confirmed facts into the
+tool prompt explicitly: `black = 1`,
 `white = 2`, `total = 3`, horizontal layout, and the exact text change. Never silently
 substitute a different variant. If the user corrects any value, use the correction.
 
