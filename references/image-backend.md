@@ -20,14 +20,16 @@ public URL is available, ask the user to upload the image first.
 
 Apply `SKILL.md` STEP 0A to the **original user request** before rewriting a prompt. For a
 product-instance quantity edit involving multiple variants, visual references, relative
-changes, or conflicting totals, ask one confirmation question and wait. Do not call a
-billable image tool in the same turn as the question. This is a hard stop: do not call
-`analyzeProductImage` either, and do not continue after wording the confirmation. Only a
-new user message can confirm the interpretation.
+changes, or conflicting totals, ask one confirmation question before calling a billable
+image tool. This is a helpful warning rather than a hard approval gate: if the user asks
+to proceed with the current interpretation, generate without asking again.
 
 After confirmation, the tool prompt must explicitly repeat every confirmed fact, for
 example: `black variant = exactly 1; white variant = exactly 2; total = exactly 3;
 horizontal layout; change image text to "3pcs"`. Never silently swap variant counts.
+If the user chooses direct generation without resolving the ambiguity, preserve the
+original wording instead of inventing a per-variant allocation and present the output as
+a preview requiring quantity and variant review.
 
 Keep output-image count separate from product-instance count: five listing slots means
 five tool calls; it does not mean five products inside each image.
@@ -114,9 +116,6 @@ failure, ask for another accessible image or continue only with explicit user fa
 
 ## Tool error contracts
 
-- `IMAGE_EDIT_CLARIFICATION_REQUIRED`: no image was generated or billed. Ask the returned
-  clarification question once, wait for confirmation, then include every per-variant
-  quantity and the total in the next prompt.
 - `IMAGE_INTENT_REJECTED`: terminal for that requested operation. Do not weaken or remove
   the rejected operation and retry automatically. Explain the limitation and wait for a
   new user instruction.

@@ -1,6 +1,6 @@
 ---
 name: xborder-image-skill
-version: "1.2.1"
+version: "1.2.2"
 description: >
   Generate multi-marketplace e-commerce listing assets from a product photo and selling
   points — listing copy, listing/marketing images, and an Excel summary — for Amazon,
@@ -42,20 +42,19 @@ First distinguish two different meanings of count:
 - **Product instance count**: "改成 3pcs" means three sellable product instances inside
   one image. Never translate one count into the other.
 
-**HARD STOP.** Ask one concise confirmation question and wait for the user's **next
-message** when a product-instance count edit contains any of the following:
+Ask one concise confirmation question before calling an image tool when a
+product-instance count edit contains any of the following:
 
 - multiple colours, variants, sizes, or SKUs;
 - visual references such as 左边/右边/这款/那款/前者/后者;
 - relative changes such as 再放一个/多放一个/另加一个/one more/add another;
 - a conflict between the stated total and the sum of per-variant quantities.
 
-Until that next user message explicitly confirms or corrects the quantities, do not call
-**any** image tool, including `analyzeProductImage`, `generateImage`, or
-`generateImageFromText`. Do not inspect the image first. Do not say "让我确认" and then
-continue in the same turn. Your entire response for that turn is the confirmation
-question; then stop. A visually obvious arrangement, a successful image analysis, or a
-reasonable inference does not count as user confirmation.
+This is a helpful ambiguity warning, not a mandatory approval gate. If the user confirms
+or corrects the quantities, use those facts. If the user instead says to proceed, submit,
+generate directly, or use your current interpretation, respect that instruction and call
+the image tool without asking again. Do not loop on the same clarification or treat a
+tool-side retry as a reason to ask again.
 
 The confirmation must state each variant quantity, total quantity, layout, and image-text
 change. Example:
@@ -63,10 +62,15 @@ change. Example:
 > 我理解为保留黑色款 1 个，将白色款增加到 2 个，共 3 个横向排列，并把文字改为
 > “3pcs”。是否正确？
 
-After a new user message confirms the interpretation, copy all confirmed facts into the
-tool prompt explicitly: `black = 1`,
+After the user confirms the interpretation, copy all confirmed facts into the tool prompt
+explicitly: `black = 1`,
 `white = 2`, `total = 3`, horizontal layout, and the exact text change. Never silently
 substitute a different variant. If the user corrects any value, use the correction.
+
+If the user explicitly chooses direct generation without resolving the ambiguity, keep
+the original wording, state the single most reasonable interpretation once, and avoid
+inventing an exact per-variant allocation that the user did not provide. Present the
+result as a preview that needs quantity and variant review.
 
 Do **not** add confirmation to ordinary unambiguous requests such as replacing a
 background, changing a scene, adding an external shadow, or editing text without changing
