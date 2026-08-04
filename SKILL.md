@@ -1,6 +1,6 @@
 ---
 name: xborder-image-skill
-version: "1.2.4"
+version: "1.2.5"
 description: >
   Generate multi-marketplace e-commerce listing assets from a product photo and selling
   points — listing copy, listing/marketing images, and an Excel summary — for Amazon,
@@ -14,7 +14,7 @@ description: >
   "包装图", "白底图", "详情图", "详情页", "A+页面", "A+ Content", "EBC", "size chart",
   "英语阿拉伯语", or asks to regenerate a specific listing image slot such as Amazon
   AS-05 / AD-03, Temu TS-04, or Noon NS-05. Also use for ordinary product-photo edits:
-  改图, 编辑图片, 换背景, 换场景, 增加/减少商品数量, 几件装, pcs, 横向/纵向摆放,
+  改图, 编辑图片, 换背景, 换场景, 增加/减少商品数量, 几件装, 几台, pcs, 横向/纵向摆放,
   修改图片文字, remove background, change scene, product quantity, or image text.
 ---
 
@@ -49,6 +49,12 @@ product-instance count edit contains any of the following:
 - visual references such as 左边/右边/这款/那款/前者/后者;
 - relative changes such as 再放一个/多放一个/另加一个/one more/add another;
 - a conflict between the stated total and the sum of per-variant quantities.
+
+Treat common Chinese measure words such as 个, 件, 只, 顶, and 台 as product-instance
+counts. When the user already provides a consistent total and complete per-variant
+allocation, for example `深灰色 1 台、白色 2 台、共 3 台`, the request is unambiguous:
+do not ask for confirmation. Copy the total, every variant quantity, and the requested
+layout into the image-tool prompt exactly.
 
 This is a helpful ambiguity warning, not a mandatory approval gate. If the user confirms
 or corrects the quantities, use those facts. If the user instead says to proceed, submit,

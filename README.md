@@ -24,6 +24,8 @@
 - **逐张出图(默认)**:`generateImage`(`prompt`=槽位 brief,`referenceImageUrl`=产品图 URL,可选 `model`:`nano-banana-pro` 默认 / `seedream-4.5` / `qwen-edit-multiangle`)。
 - **整套图片**:先识图建立一份共享商品基线,再按平台槽位逐张调用
   `generateImage`;每张复用相同参考图、商品数量/款式和事实约束。
+- **数量编辑**:识别个/件/只/顶/台/pcs 等数量表达;用户已明确总数和每款数量时
+  直接按原值写入提示词,例如“深灰色 1 台、白色 2 台、共 3 台”。
 - **无参考图**:`generateImageFromText`;识图分析:`analyzeProductImage`。
 - 无 MCP 工具时降级为只输出提示词。上传图以 URL 传入,非 base64。
 
