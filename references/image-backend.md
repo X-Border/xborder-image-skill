@@ -59,14 +59,30 @@ is unreliable, say so and recommend a clean source photo.
    image. Pass the detailed slot brief as `prompt`, the product URL as
    `referenceImageUrl`, the requested aspect ratio as `scale`, and an optional model.
 2. **Full image set.** Plan the selected slots and tell the user how many output images
-   will be generated, then call `generateImage` once per slot. The current MCP has no
-   batch preset tool.
+   will be generated. Build one evidence-backed shared product baseline, then call
+   `generateImage` once per slot with that same baseline and reference image. The current
+   MCP has no batch preset tool.
 3. **Pure text-to-image — `generateImageFromText`.** Use when there is no product photo,
    or for a scene/background/concept generated from text. References are optional.
 4. **Product analysis — `analyzeProductImage`.** Use when product attributes or selling
-   points must be extracted before planning. If it fails or returns no analysis, treat
-   that as no visual evidence: do not guess from URLs, filenames, memory, or similar
-   products.
+   points must be extracted before planning. For a multi-image set, wait for required
+   analysis to complete before starting generation; do not run it in parallel with
+   billable image calls. If it fails or returns no analysis, treat that as no visual
+   evidence: do not guess from URLs, filenames, memory, or similar products. Ask for a
+   usable image or explicit permission to proceed using only user-provided facts.
+
+## Shared baseline and claim integrity for image sets
+
+Before a multi-image set, create one shared baseline from successful analysis and explicit
+user facts. Copy it unchanged into every slot prompt. Lock product identity, count,
+variant allocation, colours, construction, Logo/text, and accessories. When exact count
+is not verified, instruct the model to preserve exactly the instances visible in the
+reference and never add, remove, or duplicate one.
+
+Only evidence-backed claims may appear as visible image text. Qualitative input does not
+authorize an exact number: for example, `quiet` must not become `28 dB`. Omit unsupported
+dimensions, performance numbers, certifications, material grades, percentages,
+warranties, rankings, and comparison claims.
 
 ## Tool reference (current public MCP schema)
 
@@ -125,4 +141,6 @@ failure, ask for another accessible image or continue only with explicit user fa
 Surface returned image markdown/URLs clearly. Treat every generated product image as a
 preview. Ask the user to compare product identity, shape, construction, colours,
 materials, texture, pattern, logo, existing text, quantity, and accessories against the
-reference before publishing.
+reference before publishing. Unless output images were successfully analyzed, do not
+claim those properties passed inspection; report only the tool status and a comparison
+checklist.

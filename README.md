@@ -22,7 +22,8 @@
 `references/image-backend.md` 定义了如何把图片 brief 变成真实图片:
 
 - **逐张出图(默认)**:`generateImage`(`prompt`=槽位 brief,`referenceImageUrl`=产品图 URL,可选 `model`:`nano-banana-pro` 默认 / `seedream-4.5` / `qwen-edit-multiangle`)。
-- **整套图片**:按平台槽位规划后,每个槽位调用一次 `generateImage`。
+- **整套图片**:先识图建立一份共享商品基线,再按平台槽位逐张调用
+  `generateImage`;每张复用相同参考图、商品数量/款式和事实约束。
 - **无参考图**:`generateImageFromText`;识图分析:`analyzeProductImage`。
 - 无 MCP 工具时降级为只输出提示词。上传图以 URL 传入,非 base64。
 

@@ -1,6 +1,6 @@
 ---
 name: xborder-image-skill
-version: "1.2.2"
+version: "1.2.3"
 description: >
   Generate multi-marketplace e-commerce listing assets from a product photo and selling
   points — listing copy, listing/marketing images, and an Excel summary — for Amazon,
@@ -79,6 +79,19 @@ the number of sellable products.
 If `analyzeProductImage` fails or returns no analysis, treat that as no visual evidence.
 Do not guess product facts from the URL, filename, model memory, or similar products. Ask
 for another accessible image or continue only with facts the user explicitly supplied.
+
+For every multi-image set, build one **shared product baseline** before writing any slot
+prompt. The baseline may contain only user-provided facts and successful image-analysis
+facts. Record the SKU/variant, product-instance count, colour allocation, shape and
+construction, Logo/text, included accessories, and any exact claims that must remain
+constant. Copy the same baseline into every slot prompt; never let each slot infer its own
+product facts.
+
+Treat claims as evidence-locked. A qualitative phrase such as "quiet" does not authorize a
+numeric claim such as "28 dB". Do not invent dimensions, capacity, performance numbers,
+certifications, material grades, percentages, warranties, rankings, or comparison results.
+When an exact value is not supplied by the user or successful analysis, omit it or use
+non-numeric wording that does not strengthen the claim.
 
 **Platform first.** Detect the target marketplace from the request (default **Amazon**):
 Amazon / 亚马逊, Temu / 拼多多海外, Noon / 中东 / noon.com. The flow below — modes,
@@ -531,8 +544,10 @@ Visible image text language rules:
 - Keep specs exact in any language. Translate meaning, not unit values. Do not
   invent claims while translating.
 
-Assume anything missing and state assumptions clearly. Do not ask questions
-first unless the request is impossible without a product category.
+Infer missing creative presentation choices such as scene, composition, lighting, and
+layout, and state material assumptions clearly. Never infer missing product facts,
+numeric specs, certifications, or performance claims. Do not ask questions first unless
+the request is impossible without a product category or an evidence-locked product fact.
 
 Resolve bundled resources relative to this skill folder. Do not assume the
 current shell directory is the skill folder.
@@ -632,6 +647,24 @@ consistency rule in every prompt:
 > tag, or Chinese marketing graphics from the source image — remove them and keep only
 > the real product. All visible text in the output is [marketplace language]."
 
+For a multi-image set, prepend the same shared baseline to every slot prompt:
+
+```text
+SHARED PRODUCT BASELINE — identical across this set
+- Verified facts: [only user-provided or successfully analyzed facts]
+- Product count and variant allocation: [exact values when verified; otherwise preserve
+  exactly what is visible in the reference image]
+- Locked attributes: SKU identity, shape, construction, colours, Logo/product text,
+  accessories, and all unedited product details
+- Claims allowed on-image: [exact evidence-backed claims only]
+- Forbidden: adding/removing/duplicating products, swapping variants, inventing numeric
+  specs or certifications, or changing locked attributes
+```
+
+If the count or variant allocation is not verified, use `preserve exactly what is visible
+in the reference image; do not add, remove, or duplicate any product instance`. Do not
+replace that clause with a guessed number.
+
 The "match precisely" instruction covers the **product** (shape/colour/proportions/
 design/material) only — it must not be read as an instruction to preserve source
 watermarks, overlay text, marketplace tags, or Chinese promo graphics. See STEP 0
@@ -657,6 +690,8 @@ Count discipline:
   is a preview before generation.
 - When using an image-generation tool that returns one image per call, call it
   once per required slot.
+- Use the same reference image and the same shared product baseline for every slot. A
+  scene change does not authorize a quantity, colour, SKU, Logo, or construction change.
 
 For each prompt, add any inferred or user-specified style guidance. If the user
 does not specify style, choose a suitable ecommerce style automatically:
@@ -712,10 +747,18 @@ Pick the tool by intent (details in `image-backend.md`):
   **no** reference product photo, or for a scene / background / concept image from text
   alone — its reference is **optional** (default `seedream-4.5`). `generateImage`'s
   reference is required; this is the no-reference path.
-- **Structured analysis first (识图):** optionally call `analyzeProductImage` to extract
-  structured 卖点 + a ready `generationPrompt` from the product photo, then feed that
-  `generationPrompt` into a slot brief or `generateImageFromText`. Use when the user says
-  『分析这张图的卖点』or『照这张图做类似的图』.
+- **Structured analysis first (识图):** For a multi-image set, call
+  `analyzeProductImage` once and wait for it to finish before any billable generation when
+  product facts are not already explicit. Use the result to build the shared baseline,
+  then reuse that baseline in every slot. Do not run analysis and generation in parallel.
+  For a single image, analysis remains optional unless the task needs facts not provided
+  by the user.
+
+If required set analysis fails or returns no usable facts, do not silently continue with
+independent slot guesses. Explain that no visual evidence is available and ask for another
+accessible image or permission to generate previews using only the user's explicit facts.
+If the user explicitly chooses to proceed, use the reference-preservation clause above,
+omit every unsupported claim, and mark all results for manual product-consistency review.
 
 Uploaded product photos arrive as URLs (`<image url="...">`) — pass them straight to
 `referenceImageUrl` / `imageUrls`, never base64. The `$imagegen` AS-slot briefs below are
@@ -726,6 +769,12 @@ Call the backend when the user requested the full kit, image set only, or a spec
 image slot. **If the `x-border` MCP tools are unavailable**, fall back: output the
 prompt text and still write it into the Excel file when Excel output was requested.
 Never claim an image was generated when no tool was called.
+
+After rendering, report only facts present in tool results. Do not claim that count,
+variant, Logo, structure, text, or styling passed inspection merely because the prompt
+requested it. Without a successful output-image analysis, say that each result is a
+pending-review preview and provide the shared baseline as the comparison checklist. Do
+not fabricate image-specific observations from URLs or prompt text.
 
 **AS-02 — 核心卖点图 (Key Benefits)**
 ```
@@ -1096,6 +1145,11 @@ associatedWith / instanceOf / preconditionOf / enabledBy
 - [ ] Broad "副图" requests produce a justified 5-7 image set, not a weak forced 8
 - [ ] Exact "完整8张" requests produce AS-02 through AS-09 as 8 separate images
 - [ ] Preview batches under 5 images are generated only when explicitly requested
+- [ ] Multi-image sets use one shared product baseline copied unchanged into every slot prompt
+- [ ] Required product analysis finishes before set generation; analysis and generation are not started in parallel
+- [ ] No numeric spec, certification, comparison, or performance claim lacks user or successful-analysis evidence
+- [ ] Every slot preserves the same product count and variant allocation, or explicitly locks the reference-image count when exact values are unknown
+- [ ] Completion text does not claim visual facts passed inspection unless output-image analysis proved them
 - [ ] Every image has a buyer concern, visual proof, and strong thumbnail hierarchy
 - [ ] Every image makes a deliberate layout decision: text/no text, text position, typography hierarchy, text background, product/person relationship, detail expression, and dynamic proof
 - [ ] Each image expresses its selling point correctly even if it has no headline; the product, person, detail, or annotation must carry the claim
