@@ -69,7 +69,9 @@ is unreliable, say so and recommend a clean source photo.
    analysis to complete before starting generation; do not run it in parallel with
    billable image calls. If it fails or returns no analysis, treat that as no visual
    evidence: do not guess from URLs, filenames, memory, or similar products. Ask for a
-   usable image or explicit permission to proceed using only user-provided facts.
+   usable image or explicit permission to proceed using only user-provided facts. Report
+   only that analysis was rejected or unavailable; do not infer a policy violation,
+   provider, safety category, or workaround that the tool did not explicitly establish.
 
 ## Shared baseline and claim integrity for image sets
 
@@ -135,6 +137,9 @@ failure, ask for another accessible image or continue only with explicit user fa
 - `IMAGE_INTENT_REJECTED`: terminal for that requested operation. Do not weaken or remove
   the rejected operation and retry automatically. Explain the limitation and wait for a
   new user instruction.
+- Other failed generation calls: retry the failed slot at most once, only when no image or
+  usable output was returned. Never regenerate a successful slot automatically. After a
+  second failure, report the slot and wait for the user before spending another attempt.
 
 ## After rendering
 

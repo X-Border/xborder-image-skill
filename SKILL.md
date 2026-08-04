@@ -1,6 +1,6 @@
 ---
 name: xborder-image-skill
-version: "1.2.3"
+version: "1.2.4"
 description: >
   Generate multi-marketplace e-commerce listing assets from a product photo and selling
   points — listing copy, listing/marketing images, and an Excel summary — for Amazon,
@@ -79,6 +79,10 @@ the number of sellable products.
 If `analyzeProductImage` fails or returns no analysis, treat that as no visual evidence.
 Do not guess product facts from the URL, filename, model memory, or similar products. Ask
 for another accessible image or continue only with facts the user explicitly supplied.
+Describe the failure conservatively as an upstream rejection or unavailable analysis.
+Do not infer that the image violated a content policy, name a provider, diagnose a safety
+category, or tell the user how to evade a policy unless the tool returned that exact,
+user-actionable explanation.
 
 For every multi-image set, build one **shared product baseline** before writing any slot
 prompt. The baseline may contain only user-provided facts and successful image-analysis
@@ -759,6 +763,11 @@ independent slot guesses. Explain that no visual evidence is available and ask f
 accessible image or permission to generate previews using only the user's explicit facts.
 If the user explicitly chooses to proceed, use the reference-preservation clause above,
 omit every unsupported claim, and mark all results for manual product-consistency review.
+
+For a failed `generateImage` call, retry that slot at most once and only when the tool
+returned no image or usable output. Never regenerate a successful slot automatically. If
+the retry also fails, report the failed slot and let the user decide whether to spend
+another generation attempt.
 
 Uploaded product photos arrive as URLs (`<image url="...">`) — pass them straight to
 `referenceImageUrl` / `imageUrls`, never base64. The `$imagegen` AS-slot briefs below are
