@@ -24,8 +24,16 @@
 - **逐张出图(默认)**:`generateImage`(`prompt`=槽位 brief,`referenceImageUrl`=产品图 URL,可选 `model`:`nano-banana-pro` 默认 / `seedream-4.5` / `qwen-edit-multiangle`)。
 - **整套图片**:先识图建立一份共享商品基线,再按平台槽位逐张调用
   `generateImage`;每张复用相同参考图、商品数量/款式和事实约束。
+- **一致性校验(防偏移)**:整套图与数量/款式编辑默认在出图后用 `analyzeProductImage`
+  对照共享基线做漂移审计(形状/颜色/Logo/部件位置/配件/数量);发现偏移只针对受影响
+  单张点名偏移属性、加强约束重出(限一次)。≥5 张整套先出 2 张样张,审计通过再补齐
+  其余槽位;审计通过前所有结果按"待复核预览"表述。
 - **数量编辑**:识别个/件/只/顶/台/pcs 等数量表达;用户已明确总数和每款数量时
   直接按原值写入提示词,例如“深灰色 1 台、白色 2 台、共 3 台”。
+- **输入组合**:仅商品图(默认)/ 商品图+参考图(商品图占 `referenceImageUrl` 身份锚位,
+  参考图以风格 DNA 进提示词;用户要求强贴风格时改走 `generateImageFromText` 双参考
+  `[商品图, 参考图]`,并强制漂移审计)/ 仅参考图(只出概念方向图,不算 listing 资产)/
+  多角度商品图(识图用全部,出图按槽位选最合适角度)。
 - **无参考图**:`generateImageFromText`;识图分析:`analyzeProductImage`。
 - 无 MCP 工具时降级为只输出提示词。上传图以 URL 传入,非 base64。
 
@@ -38,7 +46,10 @@ xborder-image-skill/
 │   └── openai.yaml
 ├── references/
 │   ├── image-backend.md          # X-Border 图片工具契约(可复用)
-│   ├── amazon-image-strategy.md  # Amazon 副图深度策略
+│   ├── amazon-image-strategy.md  # Amazon 副图深度策略(品类无关)
+│   ├── categories/
+│   │   ├── README.md             # 品类档案复用模型 + 加品类 checklist
+│   │   └── fitness-equipment.md  # 健身器材品类档案
 │   └── platforms/
 │       ├── README.md             # 复用模型 + 加平台 checklist
 │       ├── amazon.md
@@ -69,6 +80,8 @@ cp -R xborder-image-skill ~/.codex/skills/xborder-image-skill
 只生成Listing文案
 完整8张,AS-02到AS-09都要
 重新生成AS-07对比图
+参考这张竞品图的风格,按我们的产品出场景图
+诊断一下我这套副图有什么问题
 
 # Temu
 生成Temu上架图,含尺寸图
@@ -88,7 +101,7 @@ Noon整套上架图,英语阿拉伯语
 
 ## 设计原则
 
-先理解产品与买家关注点,再安排每张图表达什么;每张图只讲一个核心观点;先做版式决策;标题需有画面证明,无标题时产品/人物/细节/标注也要把卖点讲清;主色随产品/品牌/类目灵活选;不重复出图、不凑数;参考图只做策略参考不照抄;副图缩略图可读、层次强;详情页/A+ 更完整讲故事。各平台合规(Amazon 白底主图、Temu 主图纯净、Noon 中东文化+双语)见各自档案。
+先理解产品与买家关注点,再安排每张图表达什么;卖点按证据分级提取:用户事实 > 识图事实 > AI 推断,推断必须标注且不得上图为数字断言;每张图只讲一个核心观点;先做版式决策;标题需有画面证明,无标题时产品/人物/细节/标注也要把卖点讲清;主色随产品/品牌/类目灵活选;不重复出图、不凑数;参考图只做策略参考不照抄;副图缩略图可读、层次强;详情页/A+ 更完整讲故事。各平台合规(Amazon 白底主图、Temu 主图纯净、Noon 中东文化+双语)见各自档案。
 
 ## Excel 输出
 

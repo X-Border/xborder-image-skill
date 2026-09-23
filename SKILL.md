@@ -1,6 +1,6 @@
 ---
 name: xborder-image-skill
-version: "1.2.5"
+version: "1.4.0"
 description: >
   Generate multi-marketplace e-commerce listing assets from a product photo and selling
   points — listing copy, listing/marketing images, and an Excel summary — for Amazon,
@@ -8,7 +8,7 @@ description: >
   the user uploads or describes a product and mentions a marketplace or a listing task:
   Amazon / 亚马逊, Temu / 拼多多海外, Noon / 中东 / noon.com, listing, 上架, 主图, 副图,
   卖点, product images, "帮我做listing", "生成产品图", "生成主图", "生成副图", "整套上架图",
-  "我要上架", "帮我写卖点", "只生成Listing文案", "看看别人怎么弄", "参考竞品",
+  "我要上架", "帮我写卖点", "提取卖点", "只生成Listing文案", "看看别人怎么弄", "参考竞品",
   "参考Amazon前几名", "参考图", "参考图片", "参考样式", "照这个风格", "按这个感觉",
   "尺寸图", "功能图", "卖点图", "场景图", "细节图", "局部放大图", "对比图", "步骤图",
   "包装图", "白底图", "详情图", "详情页", "A+页面", "A+ Content", "EBC", "size chart",
@@ -16,6 +16,8 @@ description: >
   AS-05 / AD-03, Temu TS-04, or Noon NS-05. Also use for ordinary product-photo edits:
   改图, 编辑图片, 换背景, 换场景, 增加/减少商品数量, 几件装, 几台, pcs, 横向/纵向摆放,
   修改图片文字, remove background, change scene, product quantity, or image text.
+  Also use to review or diagnose existing listing images without generating: 诊断,
+  审图, 帮我看看这套副图, 图片有什么问题, 老图优化, review / audit my listing images.
 ---
 
 # X-Border Listing Image Skill
@@ -26,6 +28,37 @@ summary. Multi-marketplace: **Amazon** is the reference platform (fully detailed
 file); **Temu** and **Noon** are supported via `references/platforms/{temu,noon}.md`.
 Images render through the X-Border image tools (`references/image-backend.md`) — this
 skill holds no image keys.
+
+---
+
+## Execution contract (non-negotiable)
+
+The detailed rules live in the steps below and in `references/image-backend.md`; when
+they seem to conflict with convenience or speed, this contract wins.
+
+- **Evidence lock.** Never invent numeric specs, dimensions, certifications,
+  performance claims, or comparison results. Qualitative input never authorizes a
+  number ("quiet" ≠ "28 dB").
+- **Honest tooling.** Never claim an image was generated, analyzed, or inspected
+  without a successful tool result. Never write code or placeholder files to simulate
+  generation or fake a deliverable.
+- **Identity anchor.** The user's product photo is the identity anchor. On the edit
+  path it fills `referenceImageUrl`, and a style/competitor reference image may never
+  take its place. Reference images contribute style only — never their product, brand,
+  person, or text.
+- **Bounded spend.** At most one error retry and one drift regeneration per slot.
+  Never regenerate a successful slot unasked. State billable audit calls the first
+  time they apply and let the user decline.
+- **Soft gates.** Ambiguity confirmations and sample checkpoints are bypassable
+  warnings, not approval walls. When the user says to proceed, generate without
+  re-asking; never loop the same question.
+- **Plan lock.** Once the shot plan is set, prompt writing must not re-plan slots or
+  rewrite the plan's exact on-image text lines. A needed change goes back through the
+  plan, not into an ad-hoc prompt edit.
+- **Internal vocabulary stays internal.** Slot ids (AS-04, AD-03, TS-02), module
+  types, and planning field names never appear as visible text on generated images.
+- **Scope stability.** Deliver the requested assets only; do not add websites,
+  scripts, videos, extra formats, or unrequested image counts.
 
 ---
 
@@ -120,6 +153,15 @@ image-craft principles (thumbnail legibility, real product match, no AI-poster a
 and the X-Border image backend (`references/image-backend.md`) are the same for every
 platform. See `references/platforms/README.md` for the full reuse model.
 
+**Category second.** Detect the product category from the photo, analysis, and
+request. When `references/categories/` contains a matching profile, load it and apply
+its buyer-concern priority order, carousel patterns, and scene/persona language on top
+of the shared craft rules. Category-specific wording anywhere in this skill (fitness
+equipment is the worked example) applies only when the product is actually in that
+category — never transplant one category's props, scenes, or personas onto another
+category's product. With no matching profile, derive category norms from the product
+and competitor scan.
+
 Infer the mode from the user request:
 
 - **Full kit**: Generate listing copy, image prompts, a recommended secondary
@@ -144,6 +186,14 @@ Infer the mode from the user request:
 - **Preview batch**: Generate only 1-4 secondary images when the user explicitly
   asks for a preview, a first batch, "先出几张", "先来4张", or names only those
   specific slots.
+- **Image audit / 诊断**: If the user provides existing listing images and asks to
+  review, diagnose, or improve them ("看看我这套副图有什么问题", "诊断一下我的
+  listing图", "老图帮我优化"), audit instead of generating. Check each image against
+  the quality gates: buyer-concern coverage, thumbnail hierarchy, AI-poster
+  artifacts, claim evidence, text language — and, with the user's consent to the
+  analysis cost, drift against the provided main/product photo. Report per-image
+  findings, set-level findings, and fixes routed per `references/image-backend.md` →
+  "Revision routing". Generate replacements only for slots the user approves.
 
 Map natural-language image type requests to slots:
 
@@ -224,8 +274,36 @@ listing. Inspect the uploaded photo and classify any baked-in text/graphics:
   printed on the product. When it can't be cleaned reliably, say so and recommend a
   clean white-background source photo. Do not promise a perfectly clean result.
 
-Read selling points verbatim. Identify: core benefit, material claim,
-target user, any specs or numbers.
+### Selling-point extraction
+
+Read user-provided selling points verbatim. Identify: core benefit, material
+claim, target user, any specs or numbers.
+
+When the user provides no selling points, or only a product photo plus a thin
+phrase, build a **selling-point sheet** from three evidence tiers before
+planning any image:
+
+1. **User facts** — statements from the user, quoted verbatim. Highest
+   authority; never rewrite their meaning.
+2. **Observed facts** — attributes returned by a successful
+   `analyzeProductImage` call: category, material, colour, construction,
+   visible features, accessories, printed text. Cite only what the analysis
+   actually returned.
+3. **Inferred selling points** — category-level buyer appeals derived from the
+   product type. Always label these as AI-inferred. They may drive scene,
+   emotion, and composition choices, but must never introduce numbers,
+   certifications, or performance claims into visible image text.
+
+Alongside the sheet, list the **unknowns that must not be invented**: exact
+dimensions, capacity, wattage, battery life, load ratings, certifications,
+warranty terms.
+
+Before a multi-image set, give the user one concise chance to confirm or
+supplement the sheet ("可补充卖点或纠正我提取的卖点，也可以直接生成"). This is
+one soft invitation, not a questionnaire and not an approval gate: if the user
+declines or says to proceed, continue with the sheet, keep AI-inferred points
+labeled as inferred in the shot plan, and keep them out of on-image numeric
+claims. Feed the confirmed sheet into the selling-point classification below.
 
 Before planning images, understand the product and buyer concerns. For any
 secondary-image or detail-page image request, read
@@ -248,6 +326,10 @@ Analyze and transfer only the underlying design decisions:
 - Text density and hierarchy
 - Dynamic devices such as arrows, trails, silhouettes, zoom windows, or split
   states
+- Character/mascot language: a 3D cartoon host, brand mascot, hand-held product
+  reveal, or model-pose device is style DNA — preserve its abstract visual language
+  when it fits the request, but never copy the reference's brand, person identity,
+  text, or product
 
 Do not copy exact layout, exact wording, icons, brand elements, model pose,
 background, colours, or proprietary visual devices. Adapt the reference to the
@@ -472,6 +554,11 @@ generation:
 - Exact short text labels to place on the image
 - Negative constraints: what must not appear
 
+The finished shot plan is the highest-priority source for prompt writing. Do not
+re-plan slots, change layout decisions, or rewrite the plan's exact on-image text
+lines while writing prompts; when generation reveals a needed change, update the plan
+first, then regenerate only the affected prompt.
+
 Use creative auto-completion for image planning. If the user provides only a
 product photo, product type, and basic selling points, infer an appropriate
 Amazon secondary-image composition, visual hierarchy, background, lighting,
@@ -569,6 +656,8 @@ Execution flow:
   asks for listing copy; run STEP 3 directly.
 - Detail page / A+ image set: skip AS secondary-image slot planning unless the
   user also asks for副图; run STEP 3B.
+- Image audit: deliver per-image and set-level findings with routed fixes; do not
+  generate. Regenerate only user-approved slots via STEP 3.
 - Full kit: run STEP 1 through STEP 5.
 
 ---
@@ -764,6 +853,29 @@ Pick the tool by intent (details in `image-backend.md`):
   For a single image, analysis remains optional unless the task needs facts not provided
   by the user.
 
+**Input combinations (all supported):**
+
+- **商品图 only (default):** every slot renders via `generateImage` with the product
+  photo as `referenceImageUrl`.
+- **商品图 + 参考图 (style/competitor reference):** the product photo keeps the
+  `referenceImageUrl` identity-anchor slot; the reference image enters generation as
+  extracted style DNA written into the prompt — palette, composition skeleton, proof
+  device, character language. When the user explicitly demands close style adherence
+  ("必须很贴这张的风格", "照这个感觉一比一"), switch that slot to
+  `generateImageFromText` with `referenceImageUrls = [product photo, style reference]`
+  — product photo first — and state in the prompt which URL is the product identity
+  anchor and which contributes style only. This dual-reference path has a weaker
+  identity lock, so its output must pass the output drift audit before any consistency
+  claim.
+- **参考图 only, no product photo:** `generateImageFromText` with the reference in
+  `referenceImageUrls`. The output is a style/concept direction board, not a listing
+  asset: it must not present the reference's product or brand as the user's, and the
+  response must say a product photo is required before production slots can be made.
+- **多角度商品图 (2-4 photos):** feed all of them to `analyzeProductImage` for the
+  shared baseline; for each slot pick the single photo whose angle best serves that
+  slot as `referenceImageUrl` and note the choice. A back-panel feature slot uses the
+  back-view photo, not the front hero shot.
+
 If required set analysis fails or returns no usable facts, do not silently continue with
 independent slot guesses. Explain that no visual evidence is available and ask for another
 accessible image or permission to generate previews using only the user's explicit facts.
@@ -774,6 +886,45 @@ For a failed `generateImage` call, retry that slot at most once and only when th
 returned no image or usable output. Never regenerate a successful slot automatically. If
 the retry also fails, report the failed slot and let the user decide whether to spend
 another generation attempt.
+
+**Sample-first staged generation (sets of 5+).** For a multi-image set of five or more
+slots, generate the 2 highest-value slots first and run the output drift audit below on
+them before rendering the rest. If the audit passes, continue to the remaining slots in
+the same run and present the complete set together — do not pause for approval. If the
+audit fails, apply the smallest-layer fix, re-audit, and stop to report before spending
+credits on the remaining slots only when the failure survives the bounded fix. The
+sample stage is part of one full-set run, not a preview batch. If the user explicitly
+asks to see samples first, pause after the audited sample; if the user says 直接出完 /
+一次出完, skip the staging entirely.
+
+**Output drift audit (product consistency).** The reference-match clause in the prompt
+is an input-side request, not a guarantee. To actually verify that a generated image
+matches the provided product photo, call `analyzeProductImage` on the generated image
+URLs (up to 4 per call; each call bills one analysis credit), set `focus` to a
+baseline-comparison instruction, and compare the returned attributes against the shared
+product baseline:
+
+- shape, construction, and proportions
+- colour and surface finish
+- Logo and printed product text
+- component placement: handles, buttons, ports, panels, feet
+- accessory set and packaging contents
+- product-instance count and variant allocation
+
+Run this audit by default for (a) any multi-image set and (b) any product-instance
+quantity or variant edit — the two highest-drift-risk cases. Elsewhere run it when the
+user asks for guaranteed consistency. State the audit's credit cost the first time it
+applies in a task; skip the audit only when the user explicitly declines that cost, and
+then keep the pending-review-preview language for the results.
+
+When the audit finds drift, route the fix to the smallest responsible layer instead of
+regenerating the set (see `references/image-backend.md` → "Revision routing"): name the
+exact drifted attribute in a strengthened reference clause — for example "keep the
+control panel on the right side exactly as in the reference; do not mirror the product"
+— and regenerate only the affected slot, at most once. If drift survives the bounded
+regeneration, report the slot with the audited difference and let the user decide. Only
+a passing audit authorizes the completion message to state that product consistency was
+checked.
 
 Uploaded product photos arrive as URLs (`<image url="...">`) — pass them straight to
 `referenceImageUrl` / `imageUrls`, never base64. The `$imagegen` AS-slot briefs below are
@@ -789,7 +940,9 @@ After rendering, report only facts present in tool results. Do not claim that co
 variant, Logo, structure, text, or styling passed inspection merely because the prompt
 requested it. Without a successful output-image analysis, say that each result is a
 pending-review preview and provide the shared baseline as the comparison checklist. Do
-not fabricate image-specific observations from URLs or prompt text.
+not fabricate image-specific observations from URLs or prompt text. The output drift
+audit above is the only supported way to turn a pending-review preview into a verified
+result.
 
 **AS-02 — 核心卖点图 (Key Benefits)**
 ```
@@ -945,6 +1098,23 @@ Default to 5-7 AD modules. Do not force a module if it repeats the carousel.
 Use wider, more editorial compositions than AS images. Text can be slightly
 more explanatory than carousel images, but still avoid paragraph-heavy layouts.
 Each module should have one section message and one clear visual proof.
+
+Anchor the module set to **claim seeds**. AD-01 must establish 2-4 claim seeds
+chosen from the highest-evidence entries in the STEP 0 selling-point sheet —
+user facts first, then observed facts; AI-inferred appeals may seed only
+scene/emotion modules and never numeric claims. Every later module names the
+seed it expands, proves, compares, or contextualizes. If a module's message
+cannot be traced back to an AD-01 seed, revise the seed set or the module
+before generating; do not let mid-page modules introduce unrelated new selling
+points.
+
+Give each module a distinct copy role and sentence structure. Assign roles such
+as identity, desire, proof, texture/material, scene, trust/detail, and closing
+before writing copy. Adjacent modules must not share the same sentence rhythm;
+if three or more modules read as "headline + one explanatory sentence + a row
+of tags", rewrite at least two into a different structure: annotation map,
+question-and-answer, numbered mini-steps, scene captions, comparison rows,
+trust checklist, or a quiet text-free module.
 
 Detail-page modules must feel richer than carousel secondary images. Do not
 make a set of ordinary banners with empty backgrounds and one isolated model.
@@ -1161,6 +1331,18 @@ associatedWith / instanceOf / preconditionOf / enabledBy
 - [ ] Exact "完整8张" requests produce AS-02 through AS-09 as 8 separate images
 - [ ] Preview batches under 5 images are generated only when explicitly requested
 - [ ] Multi-image sets use one shared product baseline copied unchanged into every slot prompt
+- [ ] Sets of 5+ slots use sample-first staged generation (2 audited slots before the rest) unless the user opted out
+- [ ] Output drift audit run — or explicitly declined by the user — for every multi-image set and quantity/variant edit before any consistency claim
+- [ ] Drift fixes name the exact drifted attribute and regenerate only the affected slot, at most once, before reporting back
+- [ ] Selling-point sheet separates user facts, observed facts, and AI-inferred points; inferred points are labeled and never appear as on-image numeric claims
+- [ ] A+ module sets trace every module back to an AD-01 claim seed
+- [ ] A+ modules use distinct copy roles; no three modules share the same sentence rhythm
+- [ ] Style/competitor reference never occupies the identity anchor; the dual-reference path passes the drift audit before any consistency claim
+- [ ] 参考图-only requests deliver concept boards clearly marked as not listing assets
+- [ ] Slot ids and planning vocabulary do not appear as visible text on any image
+- [ ] Prompts follow the locked shot plan; on-image text lines match the plan exactly
+- [ ] Category profile from references/categories/ is applied when one matches; no cross-category props, scenes, or personas
+- [ ] Image-audit mode delivers findings without generating; replacements only for user-approved slots
 - [ ] Required product analysis finishes before set generation; analysis and generation are not started in parallel
 - [ ] No numeric spec, certification, comparison, or performance claim lacks user or successful-analysis evidence
 - [ ] Every slot preserves the same product count and variant allocation, or explicitly locks the reference-image count when exact values are unknown

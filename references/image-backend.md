@@ -58,12 +58,22 @@ is unreliable, say so and recommend a clean source photo.
 1. **Reference-image edit or listing slot — `generateImage`.** Use one call per output
    image. Pass the detailed slot brief as `prompt`, the product URL as
    `referenceImageUrl`, the requested aspect ratio as `scale`, and an optional model.
+   A style/competitor reference image never replaces the product photo in
+   `referenceImageUrl`; it contributes extracted style DNA in the prompt, or rides the
+   dual-reference exception in item 3.
 2. **Full image set.** Plan the selected slots and tell the user how many output images
    will be generated. Build one evidence-backed shared product baseline, then call
    `generateImage` once per slot with that same baseline and reference image. The current
    MCP has no batch preset tool.
 3. **Pure text-to-image — `generateImageFromText`.** Use when there is no product photo,
-   or for a scene/background/concept generated from text. References are optional.
+   or for a scene/background/concept generated from text. References are optional. Do not
+   use it for a slot that must preserve an existing product's identity — identity
+   preservation requires the reference-edit path (`generateImage` with the product photo
+   as `referenceImageUrl`) — with one exception: when a slot genuinely needs two images
+   at generation time (product photo + style reference), `generateImageFromText` may
+   carry `referenceImageUrls = [product photo, style reference]`, product photo first,
+   with the prompt naming which URL is the identity anchor and which is style-only. That
+   output must pass the output drift audit before any consistency claim.
 4. **Product analysis — `analyzeProductImage`.** Use when product attributes or selling
    points must be extracted before planning. For a multi-image set, wait for required
    analysis to complete before starting generation; do not run it in parallel with
@@ -141,6 +151,43 @@ failure, ask for another accessible image or continue only with explicit user fa
   usable output was returned. Never regenerate a successful slot automatically. After a
   second failure, report the slot and wait for the user before spending another attempt.
 
+## Output drift audit (product consistency verification)
+
+Prompt-side reference clauses request consistency; they do not verify it. To guarantee
+that a generated image matches the provided product photo, call `analyzeProductImage`
+on the generated image URLs (1-4 per call, one analysis credit per call) with `focus`
+set to a baseline-comparison instruction, then compare the returned attributes against
+the shared product baseline: shape/construction, proportions, colour/finish, Logo and
+printed text, component placement, accessory set, and product-instance count/variant
+allocation.
+
+Default the audit **on** for multi-image sets and for product-instance quantity or
+variant edits; run it elsewhere on request. State the audit's credit cost the first
+time it applies. Skip it only when the user explicitly declines the cost — results then
+remain pending-review previews and the completion message must not claim consistency
+was checked.
+
+For sets of 5+ slots, generate the 2 highest-value slots first, audit them, and only
+then spend credits on the remaining slots. A passing sample audit continues the run
+without pausing; a failing one is fixed via revision routing below before the rest of
+the set is generated.
+
+## Revision routing (smallest responsible layer)
+
+When the audit or the user's review finds a failure, fix the smallest layer; never
+regenerate the whole set by default:
+
+| Failure | Fix | Regenerate |
+|---|---|---|
+| On-image copy wrong or garbled | revise that slot's exact text lines | that slot only |
+| Product drift: shape, colour, Logo, count, component placement | strengthen the reference clause, naming the exact drifted attribute | that slot only, at most once |
+| One slot's layout or hierarchy weak | revise that slot's layout decision | that slot only |
+| Same defect across most slots | revise the shared baseline or style direction | affected slots, after the shared fix |
+| Wrong slot plan or narrative | return the shot plan to the user for review | only what the new plan changes |
+
+A drift-triggered regeneration is bounded like an error retry: one attempt per slot,
+then report the audited difference and wait for the user.
+
 ## After rendering
 
 Surface returned image markdown/URLs clearly. Treat every generated product image as a
@@ -148,4 +195,5 @@ preview. Ask the user to compare product identity, shape, construction, colours,
 materials, texture, pattern, logo, existing text, quantity, and accessories against the
 reference before publishing. Unless output images were successfully analyzed, do not
 claim those properties passed inspection; report only the tool status and a comparison
-checklist.
+checklist. Run the output drift audit above whenever consistency must be verified
+rather than assumed.
