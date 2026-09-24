@@ -1,56 +1,62 @@
-# Platform profile — Noon
+# Noon profile
 
-Noon is the leading Middle East marketplace (UAE, KSA, Egypt). It is catalog- and
-attribute-driven, bilingual **English + Arabic**, and culturally sensitive. Reuse the
-shared flow (SKILL.md STEP 0 modes, image backend, Excel) and image-craft principles;
-only the copy rules, slot taxonomy, and compliance below are Noon-specific.
+## Scope and market inputs
 
-## Rendering defaults
-- Render each selected slot with one `generateImage` call. Noon generally benefits from
-  more clean white-background gallery slots.
-- Use English + Arabic visible text for GCC listings unless the user requests English only.
-- See `references/image-backend.md` for the current tool contract.
+- Require the destination country (AE, SA, EG or another active Noon market), content
+  language and category. English/Arabic needs and category attributes vary by site/product.
+- Load current Noon Seller Lab fields for the seller SKU; this profile is not a replacement
+  for that live schema.
+- The listing package covers content and images. It does not create the SKU, price,
+  inventory or shipping offer.
 
-## Copy rules (Noon)
-- **Title**
-  - Format: `[Brand] [Product type] [Key attributes: model · size · color · material]`.
-  - Concise, English primary; provide an Arabic title when the listing targets Arabic
-    buyers. Practical length ≈ 150–200 chars.
-  - No promo text, no ALL-CAPS spam, no competitor names.
-- **Highlights / key features**: 3–5 short highlight lines (Noon "Overview"/highlights),
-  one concrete benefit each.
-- **Description**: concise rich description; bilingual EN / AR is a plus for GCC.
-- **Category attributes**: fill Noon's required category fields (brand, model number,
-  material, dimensions, etc.) — Noon is attribute-strict and rejects incomplete catalog data.
-- **Search keywords**: relevant EN + AR search terms.
-- **Language**: English + Arabic (Arabic is RTL). Default English; add Arabic for GCC.
+## Copy structure
 
-Adjust STEP 2 display: header `🛒  NOON LISTING · [Product]`, show Title (EN, + AR if
-provided) / Highlights (3–5) / Description / Attributes / Keywords.
+- Title: concise product type plus identifying, category-relevant details. Noon’s title
+  guide says to exclude the brand name, avoid promotional/search-stuffed wording and
+  repeated words, and use title case (while allowing appropriate acronyms such as LED).
+  The article gives conflicting length guidance: its main section says 5–200 characters,
+  while rejection examples say 20–160. The profile uses 20–160 as a warning-only,
+  conservative working range; confirm the live Seller Lab field and category behavior.
+- Keep the brand in the separate brand field, exactly matching the actual product/brand
+  record; do not copy an uncertain logo from a marketing render into listing data.
+- Highlights: 3–5 useful, evidence-backed points as an editorial recommendation.
+- Description and category attributes: preserve exact specifications, care, compatibility
+  and required warnings. Include Arabic only when the selected site/content flow needs it;
+  any Arabic on-image copy should receive native review.
 
-## Image slot taxonomy (Noon)
-- **NM-01 主图 (main)** — pure white background, product centered, meets Noon's minimum
-  resolution (~1000px+ on the long edge), no text / logo / watermark. Real photo strongly
-  preferred; the skill reminds and does not generate a fake main.
-- **NS-02 核心卖点图 (key benefit)** — one strong buying reason; EN or EN+AR text.
-- **NS-03 场景使用图 (lifestyle)** — culturally-appropriate Middle-East setting (see
-  compliance): modest attire, region-appropriate interior.
-- **NS-04 细节/材质图 (detail / material)** — macro of material, mechanism, or key part.
-- **NS-05 白底多角度 (white-bg multi-angle)** — 2–3 clean white-background angles (Noon
-  gallery favours these).
-- **NS-06 尺寸/规格图 (dimensions / spec)** — dimension lines + mini spec; bilingual size
-  chart for apparel / shoes.
-- **NS-07 包装/配件 (what's in the box)** — optional.
+## Gallery and image requirements
 
-Default recommended set: **5–7** (real main + generated).
+- Noon’s public image guide specifies JPG/JPEG only, width ≥660 px, width-to-height ratio
+  ≥0.5, resolution ≥72 PPI, RGB/sRGB, and ≤10 MB per image. It recommends at least three
+  high-quality images. These rules are recorded in the AE profile; verify the destination
+  country and live upload flow before release.
+- For non-fashion items, the primary image should be a full front view on pure white,
+  outside packaging; lifestyle primary images are not permitted, and only light shadows
+  are accepted. Do not crop product parts or add packaging, tags, borders, watermarks,
+  seller names or seller logos.
+- Additional images must still be photographs of the actual product. Noon expressly
+  disallows CAD drawings, thumbnails and illustrations. Keep the item clear and occupying
+  about 70–80% of each additional frame; do not show accessories not included. Short,
+  relevant text can be added, but avoid poster-like infographic compositions and inspect
+  every exact output against the current Seller Lab review.
+- Recommended sequence: primary front, back, side, other angle, details, usage. Three is
+  the public recommendation minimum; add more only when each image answers a distinct
+  buyer question.
+- Noon’s image guide includes framing guidance (vertical shots: top/bottom margins;
+  horizontal shots: side margins). Use safe breathing room and do not stretch the photo.
+- A+ / A+ content has separate sizing and asset rules; do not validate those banners with
+  the product-gallery image profile. See the official A+ source listed in
+  `platform-rules.json`.
+- Suggested story beats: primary product, distinct angle, detail, dimensions/size chart,
+  use scene and package contents. Treat count as guidance, not a universal fixed quota.
 
-## Compliance (Noon) — Middle East cultural rules (IMPORTANT)
-- **Cultural imagery**: keep imagery modest and region-appropriate — appropriate model
-  attire (covered arms/legs; women's fashion shown modestly), no alcohol, pork, gambling,
-  or religiously sensitive content. For food / cosmetics, respect halal considerations.
-- **Arabic text**: Arabic is right-to-left. If you add Arabic overlays, ensure correct RTL
-  rendering and native, natural phrasing — do not ship literal machine-translation text.
-- **Main image**: pure white background, no text / logo / watermark; meet Noon resolution
-  minimums.
-- **Bilingual**: provide EN + AR where the target market expects it.
-- No competitor brand names, no misleading claims.
+## Localization
+
+- Keep imagery locally appropriate without adding unsupported cultural prohibitions.
+  Product, content and legal restrictions must be checked for the target market/category.
+- Use correct RTL layout and human-reviewed Arabic when Arabic is requested or required.
+
+Before publishing, resolve current Seller Lab category fields, market-specific image
+exceptions and content language. The public title page contains inconsistent title-length
+benchmarks; this profile intentionally treats 20–160 as a warning range, not a verified hard
+limit. Sources and review date are in `platform-rules.json`.

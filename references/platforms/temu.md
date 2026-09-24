@@ -1,58 +1,37 @@
-# Platform profile — Temu
+# Temu profile
 
-Temu is a cross-border discount marketplace (US-first, expanding globally), mobile-first
-and price-driven. Listings are cleaner and shorter than Amazon: concise title, a few
-punchy selling points, attribute-heavy specs, and clean square images. Reuse the shared
-flow (SKILL.md STEP 0 modes, image backend, Excel) and the image-craft principles; only
-the copy rules and slot taxonomy below are Temu-specific.
+## Scope and certainty
 
-## Rendering defaults
-- Temu is mobile-first: render each selected slot with `generateImage`, `scale: "1:1"`.
-- See `references/image-backend.md` for the current tool contract.
+- Ask for the target country and Seller Center flow. Temu's detailed seller rules may be
+  available only after sign-in. The public source did not establish universal numeric
+  title limits, image counts, dimensions or category attributes; this profile deliberately
+  does not turn those unknowns into hard requirements.
+- Treat the copy and gallery below as **drafting recommendations only** until checked
+  against the target Seller Center, category template and any listing rejection feedback.
 
-## Copy rules (Temu)
-Temu ≠ Amazon: no fixed 5×(150–200) bullets, no 1500-char description, no 250-byte
-backend field. Keep it short, scannable, attribute-rich.
+## Copy and attribute structure
 
-- **Product name / title**
-  - Format: `[Core noun] [key attributes: material · size · color] [primary use]`.
-  - Keyword-front-loaded, mobile-legible. Practical length ≈ 100–130 chars (Temu allows
-    more, but concise converts on mobile).
-  - No ALL-CAPS spam, no promo text (SALE / % OFF / FREE), no brand/competitor names,
-    no emoji.
-- **Selling points**: 3–6 short benefit lines, one concrete idea each (function, material,
-  fit/size, care, package). Not the Amazon bullet formula.
-- **Description**: ~300–800 chars, scannable — what it is, key specs, main use cases,
-  care/warranty. Front-load the buying reason.
-- **Attributes / specs**: fill category attributes thoroughly (material, dimensions,
-  weight, capacity, care, compatibility) — Temu is attribute-driven and this feeds
-  search + filters.
-- **Search keywords**: a handful of relevant search terms/tags (no byte budget); include
-  synonyms and common buyer phrasing.
-- **Language**: English (US) default; localise to the target region when specified.
+- Product name: lead with the product noun and a few distinguishing, verified attributes.
+  A practical working target of roughly 100–130 characters is an editorial guideline,
+  not a Temu rule.
+- Selling points: 3–6 concise lines for function, materials, fit/size, use/care and
+  package contents where supported.
+- Description: concise, scannable and localized to the selected market. Include exact
+  specifications, compatibility, warnings and warranty only when supported by evidence.
+- Attribute mapping: import current category required fields and allowed values. Do not
+  assume Amazon fields transfer to Temu.
 
-Adjust STEP 2 display: header `🛒  TEMU LISTING · [Product]`, show Title / Selling
-points (3–6) / Description / Specs / Keywords instead of the Amazon 5-bullet + backend layout.
+## Image story and preflight
 
-## Image slot taxonomy (Temu) — square 1:1, mobile-first
-- **TM-01 主图 (main)** — clean product on pure white, fills the frame, no text / logo /
-  watermark / border / promo badge. Real photo strongly preferred; the skill reminds and
-  does not generate a fake main.
-- **TS-02 核心卖点图 (key benefit)** — one strong buying reason, big product, ≤1 headline
-  + 2–3 short badges.
-- **TS-03 场景使用图 (lifestyle / in-use)** — real setting, product in use.
-- **TS-04 细节/材质图 (detail / material)** — macro of the material, mechanism, or key part.
-- **TS-05 尺寸/规格图 (dimensions / spec)** — dimension lines + mini spec. **Apparel /
-  shoes: a clear size chart here is effectively mandatory.**
-- **TS-06 白底多角度 (white-bg multi-angle)** — 1–2 extra clean angles on white.
-- **TS-07 包装/配件 (what's in the box)** — optional, when accessories/packaging matter.
+- Suggested story beats: clean product cover, key benefit, use, detail/material,
+  dimensions/size chart, additional angle, package contents. Recommended number of
+  gallery assets depends on category and account upload rules; do not fill a fixed 5–10
+  image quota.
+- As a conservative design choice, make the cover easy to read at thumbnail size and
+  keep promotional graphics, unsupported claims, competitor marks and accessories not
+  sold out of it. This is a safe creative heuristic, not a confirmed global Temu policy.
+- Before calling an image set compliant, check target-country Seller Center rules for
+  cover image, file type/size, count, overlays, category, prohibited goods and required
+  attributes. Save the date/template or rejection reason in the manifest.
 
-Default recommended set: **5–6** (real main + 4–5 generated). Temu carousels typically
-run 5–10 images; do not pad weak slots.
-
-## Compliance (Temu)
-- **Main image is strict**: pure white background, product only, no text / logo /
-  watermark / borders / collage / promo badges. This is the most common rejection cause.
-- No misleading claims, no competitor brand names or logos, no price / discount text in images.
-- Apparel / shoes / accessories: include a size chart image.
-- Strong thumbnail hierarchy — Temu buyers browse on small mobile screens.
+Source availability and verification status are recorded in `platform-rules.json`.

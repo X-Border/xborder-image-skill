@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/X-Border/xborder-image-skill/blob/main/references/platforms/listing-manifest.schema.json",
+  "title": "X-Border normalized marketplace listing manifest",
+  "description": "Market-scoped listing copy, product evidence, category mapping, shot plan, generated media and human release review. Numeric marketplace rules live in platform-rules.json. This manifest cannot represent marketplace approval.",
+  "type": "object",
+  "required": ["manifest_version", "platform", "market", "locale", "product", "category", "facts", "listing", "media"],
+  "properties": {
+    "manifest_version": {"const": "1.0"},
+    "platform": {"enum": ["amazon", "temu", "noon", "walmart", "ebay", "etsy", "tiktok_shop", "ozon", "shopee", "mercado_libre"]},
+    "delivery_mode": {"enum": ["full_kit", "image_set_only", "copy_only"]},
+    "market": {"type": "string", "minLength": 2, "description": "Country or marketplace site code; e.g. US, CA, AE, SG, MLM, CBT."},
+    "locale": {"type": "string", "description": "BCP-47 locale or platform flow language; e.g. en-US, ru-RU, pt-BR, CBT English."},
+    "product": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "brand": {"type": ["string", "null"]},
+        "model": {"type": ["string", "null"]},
+        "gtin": {"type": ["string", "null"]},
+        "seller_sku": {"type": ["string", "null"]},
+        "condition": {"type": ["string", "null"]},
+        "variant_group_id": {"type": ["string", "null"]},
+        "variants": {"type": "array", "items": {"$ref": "#/$defs/variant"}},
+        "package_contents": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "category": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "id": {"type": ["string", "null"]},
+        "name": {"type": "string"},
+        "schema_source": {"type": ["string", "null"], "description": "URL or filename of the current market/category schema."},
+        "schema_fetched_at": {"type": ["string", "null"], "format": "date-time"},
+        "required_attributes_resolved": {"type": "boolean", "default": false}
+      },
+      "additionalProperties": true
+    },
+    "facts": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
+    "listing": {
+      "type": "object",
+      "properties": {
+        "title": {"$ref": "#/$defs/evidencedText"},
+        "highlights": {"type": "array", "items": {"$ref": "#/$defs/evidencedText"}},
+        "description": {"$ref": "#/$defs/evidencedText"},
+        "search_terms": {"type": "array", "items": {"type": "string"}},
+        "attributes": {"type": "array", "items": {"$ref": "#/$defs/attribute"}},
+        "disclosures": {"type": "array", "items": {"$ref": "#/$defs/evidencedText"}},
+        "variation_copy": {"type": "array", "items": {"$ref": "#/$defs/variant"}},
+        "platform_fields": {"type": "object", "description": "Unnormalized platform/category-specific fields; include schema key/source for each field."}
+      },
+      "additionalProperties": true
+    },
+    "claims": {"type": "array", "items": {"$ref": "#/$defs/evidencedText"}},
+    "selling_point_sheet": {
+      "type": "object",
+      "description": "Evidence-led buyer-concern and selling-point analysis captured before image generation.",
+      "properties": {
+        "buyer_questions": {"type": "array", "items": {"type": "string"}},
+        "points": {"type": "array", "items": {"$ref": "#/$defs/sellingPoint"}},
+        "unknowns": {"type": "array", "items": {"type": "string"}},
+        "excluded_claims": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "media": {"type": "array", "items": {"$ref": "#/$defs/media"}},
+    "release_review": {
+      "type": "object",
+      "description": "Human attestations required before the package can be labeled a candidate for manual upload. Passing checks do not mean marketplace approval.",
+      "properties": {
+        "product_identity": {"$ref": "#/$defs/reviewStatus"},
+        "claim_evidence_match": {"$ref": "#/$defs/reviewStatus"},
+        "sku_and_package_match": {"$ref": "#/$defs/reviewStatus"},
+        "visual_assets_and_text": {"$ref": "#/$defs/reviewStatus"},
+        "localization_and_policy": {"$ref": "#/$defs/reviewStatus"},
+        "files_and_upload_specs": {"$ref": "#/$defs/reviewStatus"},
+        "reviewed_by": {"type": ["string", "null"]},
+        "reviewed_at": {"type": ["string", "null"], "format": "date-time"},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "policy_snapshot": {
+      "type": "object",
+      "properties": {
+        "rules_reviewed_on": {"type": "string", "format": "date"},
+        "seller_center_checked_at": {"type": ["string", "null"], "format": "date-time"},
+        "category_schema_checked_at": {"type": ["string", "null"], "format": "date-time"},
+        "manual_check_status": {"enum": ["not_checked", "in_progress", "checked", "blocked"]},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Source provenance. Record whether the identity anchor is an actual product photograph; a test/example flag prevents accidental production release.",
+      "properties": {
+        "example_only": {"type": "boolean"},
+        "identity_anchor_source_type": {"enum": ["photograph", "generated", "composite", "illustration", "unknown"]},
+        "identity_anchor_url": {"type": ["string", "null"], "format": "uri"},
+        "visual_audit_status": {"enum": ["not_run", "pending_review", "passed", "failed"]},
+        "source_urls": {"type": "array", "items": {"type": "string", "format": "uri"}}
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "evidencedText": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "text": {"type": "string"},
+        "fact_ids": {"type": "array", "items": {"type": "string"}},
+        "review_status": {"enum": ["draft", "reviewed", "approved"]}
+      },
+      "additionalProperties": true
+    },
+    "reviewStatus": {"enum": ["not_checked", "passed", "failed"]},
+    "sellingPoint": {
+      "type": "object",
+      "required": ["point", "evidence_tier", "buyer_concern", "visual_proof"],
+      "properties": {
+        "point": {"type": "string"},
+        "evidence_tier": {"enum": ["user_fact", "manufacturer_source", "observed_fact", "seller_claim", "inferred_appeal"]},
+        "fact_ids": {"type": "array", "items": {"type": "string"}},
+        "buyer_concern": {"type": "string"},
+        "buyer_benefit": {"type": "string"},
+        "visual_proof": {"type": "string"},
+        "claim_risk": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "fact": {
+      "type": "object",
+      "required": ["id", "field", "value", "source_type"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "field": {"type": "string", "minLength": 1},
+        "value": {},
+        "source_type": {"enum": ["user_provided", "product_label", "product_image", "manufacturer_document", "manufacturer_page", "seller_page", "marketplace_listing", "marketplace_schema", "derived", "unverified"]},
+        "evidence": {"type": ["string", "null"]},
+        "source_url": {"type": ["string", "null"], "format": "uri"},
+        "confidence": {"enum": ["high", "medium", "low"]}
+      },
+      "additionalProperties": true
+    },
+    "attribute": {
+      "type": "object",
+      "required": ["name", "value"],
+      "properties": {
+        "id": {"type": ["string", "null"]},
+        "name": {"type": "string"},
+        "value": {},
+        "unit": {"type": ["string", "null"]},
+        "required": {"type": "boolean"},
+        "fact_ids": {"type": "array", "items": {"type": "string"}},
+        "schema_source": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "variant": {
+      "type": "object",
+      "required": ["seller_sku"],
+      "properties": {
+        "seller_sku": {"type": "string"},
+        "attributes": {"type": "object"},
+        "gtin": {"type": ["string", "null"]},
+        "quantity": {"type": ["integer", "null"], "minimum": 0},
+        "image_ids": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "media": {
+      "type": "object",
+      "required": ["id", "role", "source_type"],
+      "properties": {
+        "id": {"type": "string"},
+        "status": {"enum": ["planned", "rendered", "reviewed"]},
+        "role": {"enum": ["primary", "gallery", "detail_page", "video", "storefront", "other"]},
+        "slot_name": {"type": ["string", "null"]},
+        "path": {"type": ["string", "null"]},
+        "url": {"type": ["string", "null"], "format": "uri"},
+        "prompt": {"type": ["string", "null"]},
+        "source_type": {"enum": ["photograph", "generated", "composite", "illustration", "video", "unknown"]},
+        "width": {"type": ["integer", "null"], "minimum": 1},
+        "height": {"type": ["integer", "null"], "minimum": 1},
+        "resolution_ppi": {"type": ["number", "null"], "minimum": 0},
+        "bytes": {"type": ["integer", "null"], "minimum": 1},
+        "format": {"type": ["string", "null"]},
+        "color_space": {"type": ["string", "null"]},
+        "background": {"type": ["string", "null"]},
+        "contains_text": {"type": ["boolean", "null"]},
+        "contains_added_text": {"type": ["boolean", "null"], "description": "Whether marketing text was added over the product photo; distinguish this from text physically printed on the product or its genuine packaging."},
+        "buyer_question": {"type": ["string", "null"]},
+        "primary_message": {"type": ["string", "null"]},
+        "visual_proof": {"type": ["string", "null"]},
+        "layout": {"type": ["string", "null"]},
+        "on_image_text": {"type": ["array", "null"], "items": {"type": "string"}},
+        "why_gallery_slot": {"type": ["string", "null"]},
+        "fact_ids": {"type": "array", "items": {"type": "string"}},
+        "variant_ids": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

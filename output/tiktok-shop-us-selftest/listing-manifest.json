@@ -1,0 +1,194 @@
+{
+  "manifest_version": "1.0",
+  "platform": "tiktok_shop",
+  "market": "US",
+  "locale": "en-US",
+  "product": {
+    "name": "Test foldable storage stool",
+    "brand": null,
+    "model": null,
+    "gtin": null,
+    "seller_sku": "TEST-STOOL-01",
+    "condition": "new",
+    "variant_group_id": null,
+    "variants": [],
+    "package_contents": ["1 foldable storage stool (test assumption; confirm before use)"]
+  },
+  "category": {
+    "id": null,
+    "name": "Home & Living > Storage Stool",
+    "schema_source": null,
+    "schema_fetched_at": null,
+    "required_attributes_resolved": false
+  },
+  "facts": [
+    {
+      "id": "F-01",
+      "field": "product_type_and_foldability",
+      "value": "foldable storage stool",
+      "source_type": "unverified",
+      "evidence": "Synthetic test case based on the repository's illustrative foldable-stool example; not verified against a real product.",
+      "confidence": "low"
+    },
+    {
+      "id": "F-02",
+      "field": "package_contents",
+      "value": "one stool",
+      "source_type": "unverified",
+      "evidence": "Test-only assumption from the illustrative example; confirm actual shipped contents.",
+      "confidence": "low"
+    },
+    {
+      "id": "F-03",
+      "field": "visual_appearance",
+      "value": "light greige cube-shaped stool with padded lid and visible seams",
+      "source_type": "product_image",
+      "evidence": "Visible in the synthetic test cover generated for this run; this is not a real product photo.",
+      "confidence": "medium"
+    }
+  ],
+  "listing": {
+    "title": {
+      "text": "Foldable Storage Stool with Padded Lid",
+      "fact_ids": ["F-01", "F-03"],
+      "review_status": "draft"
+    },
+    "highlights": [],
+    "search_terms": [],
+    "attributes": [],
+    "disclosures": [],
+    "variation_copy": [],
+    "platform_fields": {}
+  },
+  "claims": [],
+  "media": [
+    {
+      "id": "TT-US-01",
+      "role": "primary",
+      "slot_name": "Main image — white background, no overlay",
+      "path": "images/01-main.png",
+      "url": null,
+      "prompt": null,
+      "source_type": "generated",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2292687,
+      "format": "png",
+      "color_space": null,
+      "background": "white",
+      "contains_text": false,
+      "fact_ids": ["F-03"],
+      "variant_ids": []
+    },
+    {
+      "id": "TT-US-02",
+      "role": "gallery",
+      "slot_name": "Alternate side view",
+      "path": "images/02-side-view.png",
+      "url": null,
+      "prompt": null,
+      "source_type": "generated",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1690284,
+      "format": "png",
+      "color_space": null,
+      "background": "white",
+      "contains_text": false,
+      "fact_ids": ["F-03"],
+      "variant_ids": []
+    },
+    {
+      "id": "TT-US-03",
+      "role": "gallery",
+      "slot_name": "Open storage state",
+      "path": "images/03-open-storage.png",
+      "url": null,
+      "prompt": null,
+      "source_type": "generated",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2407795,
+      "format": "png",
+      "color_space": null,
+      "background": "white",
+      "contains_text": false,
+      "fact_ids": ["F-01", "F-03"],
+      "variant_ids": []
+    },
+    {
+      "id": "TT-US-04",
+      "role": "gallery",
+      "slot_name": "Lid and side seam close-up",
+      "path": "images/04-detail.png",
+      "url": null,
+      "prompt": null,
+      "source_type": "generated",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2906788,
+      "format": "png",
+      "color_space": null,
+      "background": "white",
+      "contains_text": false,
+      "fact_ids": ["F-03"],
+      "variant_ids": []
+    },
+    {
+      "id": "TT-US-05",
+      "role": "gallery",
+      "slot_name": "Living-room use scene",
+      "path": "images/05-use-scene.png",
+      "url": null,
+      "prompt": null,
+      "source_type": "generated",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 2716864,
+      "format": "png",
+      "color_space": null,
+      "background": "home interior",
+      "contains_text": false,
+      "fact_ids": ["F-03"],
+      "variant_ids": []
+    },
+    {
+      "id": "TT-US-06",
+      "role": "gallery",
+      "slot_name": "Package contents — quantity test assumption",
+      "path": "images/06-package-contents.png",
+      "url": null,
+      "prompt": null,
+      "source_type": "generated",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1930787,
+      "format": "png",
+      "color_space": null,
+      "background": "white",
+      "contains_text": true,
+      "fact_ids": ["F-02", "F-03"],
+      "variant_ids": []
+    }
+  ],
+  "policy_snapshot": {
+    "rules_reviewed_on": "2026-09-24",
+    "seller_center_checked_at": null,
+    "category_schema_checked_at": null,
+    "manual_check_status": "not_checked",
+    "notes": [
+      "Synthetic skill self-test only; not ready to publish.",
+      "TikTok Shop US is the assumed destination because it is the only TikTok Shop profile currently researched in this skill.",
+      "Current X-Border image-generation and analyzeProductImage tools are unavailable in this environment; built-in image_gen was used and formal drift audit remains pending.",
+      "Replace the synthetic cover with a real product photo and verify all facts, package contents, category fields, and current Seller Center rules."
+    ]
+  },
+  "provenance": {
+    "example_only": true,
+    "render_backend": "built-in image_gen",
+    "identity_anchor": "Synthetic cover generated for this test; not an actual product photograph",
+    "visual_audit_status": "pending_review",
+    "xborder_render_backend_available": false,
+    "xborder_drift_audit_available": false
+  }
+}

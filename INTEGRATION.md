@@ -66,7 +66,7 @@ GitHub push 后需要把市场快照同步到新版本:
 ③ 非自动嵌入的安装副本需要重新安装/更新;自动嵌入副本在登录对账或刷新后更新
 ```
 
-- 每次更新顺手 bump `SKILL.md` frontmatter 的 `version:`(不改会自动生成时间戳版本)。
+- 每次更新顺手 bump `SKILL.md` frontmatter 的 `metadata.version:`(不改会自动生成时间戳版本)。
 - 重新安装是按 identifier 就地 upsert:内容变了才更新,没变则跳过,不会重复。
 - 想省掉第②步,可给 X-Border 加 GitHub webhook 自动 `resync`。
 
@@ -75,7 +75,7 @@ GitHub push 后需要把市场快照同步到新版本:
 ## 5. 在聊天里使用
 
 1. **安装**:技能商店 → 搜 `xborder-image-skill` → 「安装到 XBorder AI」。
-2. **触发**:开 xborder 对话,上传产品白底图 + 给卖点 + 说明平台。
+2. **触发**:开 xborder 对话,提供真实商品图或可访问的直图 URL,补充已知卖点,并说明平台/站点/类目。
 3. **示例**:
 
 ```text
@@ -85,14 +85,41 @@ GitHub push 后需要把市场快照同步到新版本:
 完整 8 张,AS-02 到 AS-09 都要
 重新生成 AS-07 对比图
 
-# Temu
-生成 Temu 上架图,含尺寸图
-Temu 整套图
+# Temu (细则需在目标国 Seller Center 确认)
+生成 Temu US listing 草稿和图片策划,类目是家居收纳,标出待确认规则
 
 # Noon
-生成 Noon 副图,中英双语,中东场景
-Noon 整套上架图,英语阿拉伯语
+生成 Noon UAE listing 和副图,按 Seller Lab 的类目属性模板输出,英语+阿拉伯语
+
+# Walmart / eBay / Etsy / TikTok Shop
+准备 Walmart Canada listing manifest 和图片检查清单,运动器材类
+准备 eBay US listing,二手状态,先列出类目 required item specifics
+准备 Etsy listing,定制商品,区分实拍主图和个性化 mockup
+准备 TikTok Shop US listing,类目是服装,输出变体属性和图片资产
+
+# Ozon / Shopee / Mercado Libre
+准备 Ozon Russia listing,俄语,先列出需要从 Ozon 类目 API 拉取的属性
+准备 Shopee Thailand listing，首版沿用 Shopee 共用图片基线，图片文字和 listing 文案使用泰语；标明项目默认值，并单独列出已核验的平台要求与待确认项
+准备 Mercado Libre Brazil Global Selling listing,区分 CBT 与本地站字段
 ```
+
+- 先确定平台、目标国家/站点、类目和语言。市场未知时只产市场中立草稿，不得沿用其他站点的数值限制。
+- 可以提供商品页 URL 或直图 URL：商品页用于提取页面明确写出的规格，直图 URL 用于识图；两者不能混为一个身份锚点。登录墙、地区限制或无法读图时需补传图片/规格，不能猜。
+- 完整包/需要下载时，输出 `listing-manifest.json`；其 JSON 结构定义在
+  `references/platforms/listing-manifest.schema.json`。规则来源、适用范围和复核日期在
+  `references/platforms/platform-rules.json`。
+- 可独立运行平台预检与 Excel 导出：
+
+```bash
+python3 scripts/validate_listing.py listing-manifest.json
+python3 scripts/validate_listing.py listing-manifest.json --json
+python3 scripts/validate_listing.py listing-manifest.json --require-candidate-for-manual-upload
+python3 scripts/generate_excel.py listing-manifest.json --output out/listing.xlsx
+```
+
+预检只校验 manifest 中可机器判定的元数据及其证据引用，不会解码图片像素、访问店铺/API 或判断商品是否真实。`production_readiness` 为 `blocked`、`concept_preview`、`human_review_required` 或 `candidate_for_manual_upload`；最后一档要求在最终文件上完成并记录人工检查，仍不等于平台批准。Excel 导出需要 `openpyxl`。
+
+- 多图生成前先把买家疑虑、证据卖点、视觉证明和逐槽 shot plan 写入 manifest；不能只靠统一 prompt 或徽章模板。终稿审核至少覆盖实物一致性、事实/宣称、SKU/包装、图文质量、本地化、文件规格和 Seller Center/类目 schema。未完成就交付为待审状态。
 
 - 图片默认逐张出;整套图先等待识图建立共享商品基线,再按槽位逐张调用,以便每张图
   使用明确构图且保持相同 SKU、数量、款式和事实约束。未经证实的数字参数不得写入图片。
@@ -110,7 +137,7 @@ Noon 整套上架图,英语阿拉伯语
 | 报错 "x-border-ai 出图需要参考图" | `generateImage` 是编辑模型,必须带参考图;纯文生/无产品图请改用 `generateImageFromText`,或上传产品图后再试 |
 | 成图带中文水印 / 1688 文字 | 源图太脏 → 走两遍法(先出干净底图再做槽位);大水印去不干净时换干净白底原图(见 SKILL.md STEP 0「Source-image hygiene」) |
 | 已安装用户拿不到更新 | 市场是快照,让用户重新安装一次 |
-| 成图出现中文(非 CN 平台) | 已由净化规则约束,若仍出现是模型残留 → 重出或换模型 |
+| 成图出现不符合目标站点语言的促销文字 | 先核实这是不是实物包装上的原文；若是营销叠字则去除，若是产品/法定标签则保留准确并本地化说明 |
 
 ---
 
