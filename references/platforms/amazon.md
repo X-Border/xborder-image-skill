@@ -2,8 +2,8 @@
 
 Amazon is the fully-detailed platform. Its copy rules and per-slot image briefs live in
 `SKILL.md` (STEP 1 copy, STEP 3 AS slots, STEP 3B AD modules) and
-`references/amazon-image-strategy.md`. This file is the concise profile that Temu / Noon
-are modeled on.
+`references/amazon-image-strategy.md`. Other platforms have their own market-scoped
+profiles; do not apply Amazon's slot ids, field layout or visual policy to them.
 
 ## Rendering defaults
 - Render each selected AS/AD slot with one `generateImage` call.
@@ -11,14 +11,22 @@ are modeled on.
 - See `references/image-backend.md` for the current tool contract.
 
 ## Copy rules
-- **Title** ≤150 chars; primary keyword within first 80; Capitalise Every Main Word;
-  no ALL-CAPS words, no promo words (Best/Free/Sale), no special chars.
-- **Bullets** exactly 5, each 150–200 chars, leading `【ALL-CAPS LABEL】`, one COSMO
-  pairing per bullet.
-- **Description** 1500–2000 chars, 5 paragraphs (hook → solution → features → use-cases → close).
-- **Backend search terms** ≤250 bytes, space-separated, no repeats; synonyms + misspellings + ES variants (US).
-- Cover ≥8 COSMO dimensions across the copy.
-- Language: target-marketplace language (default English / en-US).
+- **Title (US snapshot)** ≤200 characters including spaces; category validation can add
+  constraints. Avoid unsupported promotional wording and repetitive keyword stuffing.
+- Amazon's current title guidance limits most words to two repetitions (excluding common
+  articles/prepositions/conjunctions) and restricts special characters such as
+  `! $ ? _ { } ^ ¬ ¦`, with a brand-name exception; the preflight warns on these for
+  human review.
+- **Bullets**: 5 is a useful drafting pattern in many categories, not a universal copy
+  length rule. Use concise, evidence-backed points and check the current item-type fields.
+- **Description**: write for the category and item type. No universal 1500–2000 character
+  limit is asserted here; check the current submission schema.
+- **Backend search terms (US)**: under 250 UTF-8 bytes; use spaces, do not repeat terms,
+  and omit brand/product identifiers or temporary/promotional claims. Add relevant
+  synonyms, abbreviations and alternate names; don't pad with misspellings or stop words.
+- Cover ≥8 COSMO dimensions across the copy when helpful; this is an internal writing aid,
+  not an Amazon attribute or compliance rule.
+- Language: target-marketplace language; don't assume English for non-US sites.
 
 ## Image slot taxonomy
 - **AM-01** — main image. Real white-background product photo; the skill never
@@ -29,6 +37,12 @@ are modeled on.
 - **AV-01** — optional video slot (prompt only).
 
 ## Compliance
-- Main image: real photo on pure white; re-check Amazon's current image policy before upload.
+- Amazon US main image: accurate photo on pure white, exact product/accessories shown,
+  product occupies at least 85% of the frame, no added text/graphics except narrow
+  category/swatches exceptions. Generated secondary visuals must still accurately depict
+  the item.
 - No competitor brand names in comparison images.
-- Visible image-text language follows the target marketplace (default English).
+- Check category, image-count, zoom/aspect and variation rules in Seller Central before
+  upload. Market-specific language follows the selected site.
+
+Source snapshots and scopes are recorded in `platform-rules.json`.

@@ -1,0 +1,102 @@
+{
+  "manifest_version": "1.0",
+  "platform": "shopee",
+  "market": "SG",
+  "locale": "en-SG",
+  "product": {
+    "name": "Example Foldable Storage Stool",
+    "brand": "Example brand supplied by user",
+    "model": null,
+    "gtin": null,
+    "seller_sku": "EX-STOOL-01",
+    "condition": "new",
+    "variant_group_id": null,
+    "variants": [],
+    "package_contents": ["1 foldable stool"]
+  },
+  "category": {
+    "id": null,
+    "name": "Home & Living > Furniture",
+    "schema_source": null,
+    "schema_fetched_at": null,
+    "required_attributes_resolved": false
+  },
+  "facts": [
+    {
+      "id": "F-01",
+      "field": "folding_mechanism",
+      "value": "foldable",
+      "source_type": "user_provided",
+      "evidence": "Illustrative example fact; replace with user/product evidence.",
+      "source_url": null,
+      "confidence": "high"
+    },
+    {
+      "id": "F-02",
+      "field": "package_contents",
+      "value": "1 foldable stool",
+      "source_type": "user_provided",
+      "evidence": "Illustrative example fact; replace with verified package contents.",
+      "source_url": null,
+      "confidence": "high"
+    }
+  ],
+  "listing": {
+    "title": {
+      "text": "Example Foldable Storage Stool for Home Use",
+      "fact_ids": ["F-01"],
+      "review_status": "draft"
+    },
+    "highlights": [
+      {
+        "text": "Foldable design for storage when not in use.",
+        "fact_ids": ["F-01"],
+        "review_status": "draft"
+      },
+      {
+        "text": "Package includes one stool.",
+        "fact_ids": ["F-02"],
+        "review_status": "draft"
+      }
+    ],
+    "description": {
+      "text": "Illustrative sample copy only. Replace with verified product details and localize before listing.",
+      "fact_ids": ["F-01", "F-02"],
+      "review_status": "draft"
+    },
+    "search_terms": [],
+    "attributes": [],
+    "disclosures": [],
+    "variation_copy": [],
+    "platform_fields": {}
+  },
+  "claims": [],
+  "media": [
+    {
+      "id": "IMG-01",
+      "role": "primary",
+      "slot_name": "Cover product photo",
+      "path": null,
+      "url": null,
+      "prompt": null,
+      "source_type": "photograph",
+      "width": 1200,
+      "height": 1200,
+      "bytes": 250000,
+      "format": "jpg",
+      "color_space": "sRGB",
+      "background": "white",
+      "contains_text": false,
+      "fact_ids": ["F-01", "F-02"],
+      "variant_ids": []
+    }
+  ],
+  "policy_snapshot": {
+    "rules_reviewed_on": "2026-09-24",
+    "seller_center_checked_at": null,
+    "category_schema_checked_at": null,
+    "manual_check_status": "not_checked",
+    "notes": ["Illustrative manifest: replace facts and resolve the current Shopee SG category schema before use."]
+  },
+  "provenance": {"example_only": true}
+}

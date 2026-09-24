@@ -1,33 +1,72 @@
 ---
 name: xborder-image-skill
-version: "1.4.0"
 description: >
-  Generate multi-marketplace e-commerce listing assets from a product photo and selling
-  points — listing copy, listing/marketing images, and an Excel summary — for Amazon,
-  Temu, and Noon (Middle East). Images render through the X-Border image tools. Use when
-  the user uploads or describes a product and mentions a marketplace or a listing task:
-  Amazon / 亚马逊, Temu / 拼多多海外, Noon / 中东 / noon.com, listing, 上架, 主图, 副图,
-  卖点, product images, "帮我做listing", "生成产品图", "生成主图", "生成副图", "整套上架图",
-  "我要上架", "帮我写卖点", "提取卖点", "只生成Listing文案", "看看别人怎么弄", "参考竞品",
-  "参考Amazon前几名", "参考图", "参考图片", "参考样式", "照这个风格", "按这个感觉",
-  "尺寸图", "功能图", "卖点图", "场景图", "细节图", "局部放大图", "对比图", "步骤图",
-  "包装图", "白底图", "详情图", "详情页", "A+页面", "A+ Content", "EBC", "size chart",
-  "英语阿拉伯语", or asks to regenerate a specific listing image slot such as Amazon
-  AS-05 / AD-03, Temu TS-04, or Noon NS-05. Also use for ordinary product-photo edits:
-  改图, 编辑图片, 换背景, 换场景, 增加/减少商品数量, 几件装, 几台, pcs, 横向/纵向摆放,
-  修改图片文字, remove background, change scene, product quantity, or image text.
-  Also use to review or diagnose existing listing images without generating: 诊断,
-  审图, 帮我看看这套副图, 图片有什么问题, 老图优化, review / audit my listing images.
+  Build marketplace listing kits from product photos, accessible product-page facts and
+  selling points: listing copy, evidence-led selling-point sheets, platform-appropriate
+  image plans/assets, a normalized manifest and (when requested) Excel for Amazon, Temu,
+  Noon, Walmart, eBay, Etsy, TikTok Shop, Ozon, Shopee and Mercado Libre. Use when a user
+  asks for listings, listing images, main/secondary images, product claims, localization,
+  or listing-image audit/editing: 上架, 主图, 副图, 卖点图, 场景图, 尺寸图, 详情图, A+,
+  listing, product images, generate/edit/review images, or provides a product photo or URL.
+  Supports product photo and direct-image URL inputs; image generation follows each
+  market's rules and may be preview-only where synthetic images are not allowed.
+metadata:
+  version: "1.6.0"
 ---
 
 # X-Border Listing Image Skill
 
-From one white-background photo plus 2-3 selling points, generate a marketplace listing
-kit: listing copy, image prompts, rendered listing/marketing images, and an Excel
-summary. Multi-marketplace: **Amazon** is the reference platform (fully detailed in this
-file); **Temu** and **Noon** are supported via `references/platforms/{temu,noon}.md`.
+From product evidence and a target marketplace, create a listing kit: structured copy,
+selling-point and image plans, images where the selected market permits them, and (when
+requested) an Excel summary.
+Supported profiles are **Amazon**, **Temu**, **Noon**, **Walmart Marketplace**, **eBay**,
+**Etsy**, **TikTok Shop**, **Ozon**, **Shopee**, and **Mercado Libre**. Amazon keeps its
+deep image workflow in this file; every platform's market-scoped rules and workflow are
+in `references/platforms/`.
 Images render through the X-Border image tools (`references/image-backend.md`) — this
 skill holds no image keys.
+
+This produces content and a preflight package; it does not upload, publish, price, or
+manage inventory in seller accounts. Never claim marketplace approval from a local
+check alone.
+
+## Production release standard
+
+Use four explicit delivery states in the manifest, workbook, and final response:
+
+- **Blocked** — an enforced rule failed, a release gate failed, or core manifest data is
+  invalid. Do not deliver the package as a candidate until corrected.
+- **Concept / preview** — product identity, facts, market rules, or image review are
+  incomplete. These files are for direction and must not be sent to a listing operator
+  as final assets.
+- **Human review required** — automated checks ran, but at least one evidence, image,
+  category, localization, file, or live-policy gate is unresolved.
+- **Candidate for manual upload** — all listed review gates are recorded as passed,
+  scoped automated checks have no errors or warnings, required category fields and the
+  dated live Seller Center/API check are recorded, and an operator has reviewed the
+  exact files. This is the strongest status this skill can assign; it is not platform
+  approval and it does not guarantee acceptance.
+
+Never use “100% compliant”, “approved”, or “ready to publish” based only on generation
+or a local validator. Missing evidence, a synthetic test identity image, inaccessible
+source URLs, an unavailable analyzer/auditor without an equivalent human comparison, or
+unresolved live category rules keep the package at **human review required**. A real
+source image can still produce a draft; it does not by itself verify claims or prove
+every generated angle matches the item.
+
+For multi-image production work, save a selling-point sheet and a locked shot plan in the
+manifest before rendering. Every image slot must state its buyer question, evidenced
+message, visual proof, layout, and exact on-image text (or explicitly “no text”). A slot
+without new buyer value is omitted. Keep the clean-background/no-overlay constraints
+scoped to the platform's primary image. Gallery images can use stronger scenes,
+contrast, callouts, and short localized copy when that market's rules permit it.
+
+When exact text matters, render the product/scene with clean reserved text areas and add
+copy using deterministic typesetting or a verified design/compositing step. Do not treat
+AI-rendered letters as accurate. If no deterministic text step is available, label the
+image as a visual draft and require a human text proof. Inspect every final file at
+thumbnail and full size for product identity, quantity, variant, claims, text, cropping,
+artifacts, localization, and platform-specific main-image treatment.
 
 ---
 
@@ -59,6 +98,30 @@ they seem to conflict with convenience or speed, this contract wins.
   types, and planning field names never appear as visible text on generated images.
 - **Scope stability.** Deliver the requested assets only; do not add websites,
   scripts, videos, extra formats, or unrequested image counts.
+- **Market-scoped rules.** Require country/site and category when they affect fields,
+  language or limits. Use `references/platforms/platform-rules.json`; never apply one
+  country's rule to another. Distinguish sourced requirements, official guidance and
+  recommendations. Dynamic category schemas and Seller Center rules remain live checks.
+- **Structured evidence.** Normalize content and claims with
+  `references/platforms/listing-manifest.schema.json`. Every factual claim must trace to
+  a fact record; derived/unverified facts stay labeled and cannot become technical,
+  numeric, safety or certification claims.
+
+### Product-page URL and direct-image URL inputs
+
+Treat a product-page URL and a direct image URL as different sources. For a public
+product-page URL, inspect the page only if it is accessible; record each usable product
+fact with the exact source URL and whether the page is the manufacturer, brand, seller,
+or a marketplace listing. Manufacturer specifications and seller-written marketing
+claims are not equally strong evidence. Do not treat reviews, inferred dimensions,
+search snippets, variant menus, or a similarly named product as verified facts. A
+marketplace page may describe a different seller's bundle or SKU.
+
+For a direct image URL, pass the image URL to the image-analysis tool and wait for a
+successful result before recording visual observations. A product-page URL is never an
+image identity anchor: extract an accessible product-image URL first. If the page or
+image is blocked, ask for an uploaded image, a direct image URL, or a spec sheet; do not
+pretend the URL was read. Keep the URL and extracted fact provenance in the manifest.
 
 ---
 
@@ -136,22 +199,26 @@ certifications, material grades, percentages, warranties, rankings, or compariso
 When an exact value is not supplied by the user or successful analysis, omit it or use
 non-numeric wording that does not strengthen the claim.
 
-**Platform first.** Detect the target marketplace from the request (default **Amazon**):
-Amazon / 亚马逊, Temu / 拼多多海外, Noon / 中东 / noon.com. The flow below — modes,
-product reading, image backend, Excel — is shared across marketplaces. What differs per
-platform is **copy rules** and **image slot taxonomy**:
+**Platform first.** Detect the platform, then resolve the **country/site and category**.
+Supported targets: Amazon, Temu, Noon, Walmart Marketplace, eBay, Etsy, TikTok Shop,
+Ozon, Shopee, Mercado Libre. A platform without a market is not publish-ready. The flow
+below — modes, product reading, image backend, structured export — is shared. Copy
+fields, localization, image story and policy checks are market/category-specific:
 
 - **Amazon** — rules are inlined in this file: STEP 1 copy, STEP 3 AS slots, STEP 3B AD
   modules.
-- **Temu** — follow `references/platforms/temu.md`: shorter concise copy and TM/TS slots.
-  Adjust STEP 1/STEP 2/STEP 3 to that profile.
-- **Noon** — follow `references/platforms/noon.md`: bilingual EN/AR, Middle-East
-  compliance, and NM/NS slots.
+- **Temu / Noon / Walmart / eBay / Etsy / TikTok Shop / Ozon / Shopee / Mercado Libre** —
+  read that platform profile in `references/platforms/` before drafting. Do not reuse
+  Amazon's bullet count, keyword byte budget, slot ids, or visual style as a marketplace
+  rule. For Shopee and Mercado Libre, resolve the destination country/site. For Ozon,
+  Walmart, TikTok Shop and other category-driven flows, obtain current category fields.
 
-If the user does not name a marketplace, default to Amazon (or ask when ambiguous). The
-image-craft principles (thumbnail legibility, real product match, no AI-poster artifacts)
-and the X-Border image backend (`references/image-backend.md`) are the same for every
-platform. See `references/platforms/README.md` for the full reuse model.
+If the user does not name a marketplace, Amazon can be used as a **drafting default**;
+label the assumption and do not infer a market or claim compliance. If country/site is
+unknown, use only market-neutral product facts and mark platform limits for live review.
+Image craft and the X-Border backend are shared, but each marketplace's main-image,
+overlay, AI/mockup, language, and gallery rules take precedence. See
+`references/platforms/README.md` for the evidence model.
 
 **Category second.** Detect the product category from the photo, analysis, and
 request. When `references/categories/` contains a matching profile, load it and apply
@@ -258,14 +325,14 @@ listing. Inspect the uploaded photo and classify any baked-in text/graphics:
   拼多多 / store 水印), promo badges (促销角标 / 满减 / 包邮), price tags, and Chinese
   marketing overlays are NOT part of the product. Instruct the image model to remove
   them and reconstruct the area cleanly.
-- **Text physically on the product / packaging — handle by policy.** Chinese printed on
-  the product body, buttons, or labels: neutralise it or replace with the target-market
-  language; do not leave Chinese on an Amazon/Temu/Noon image. For packaging / "what's
-  in the box" shots, prefer neutral or target-language packaging rather than showing
-  Chinese packaging.
-- **Output image text = marketplace language only** (Amazon/Temu → English default,
-  Noon → EN/AR), per the "Visible image text language rules" below. Never carry Chinese
-  into a non-CN-marketplace image unless the user explicitly asks for a CN platform.
+- **Text physically on the product / packaging — preserve it accurately.** Do not
+  fabricate or silently translate a real label. For packaging or "what's in the box"
+  imagery, select a destination-appropriate package and add a reviewed translation only
+  where policy and the real product support it.
+- **Output image text = selected site's buyer language.** Use the market profile locale
+  (for example, Shopee TW → Traditional Chinese, Mercado Libre MLB → Brazilian
+  Portuguese, Noon GCC → English/Arabic when requested). Never carry Chinese marketing
+  overlays into a non-CN marketplace unless the user requests them.
 - **Two-pass when the source is dirty.** If the photo has a heavy watermark or lots of
   baked-in Chinese, first render a cleaned base image (remove watermark/overlay text,
   keep the product on a clean background), then use that cleaned image as the reference
@@ -280,16 +347,21 @@ Read user-provided selling points verbatim. Identify: core benefit, material
 claim, target user, any specs or numbers.
 
 When the user provides no selling points, or only a product photo plus a thin
-phrase, build a **selling-point sheet** from three evidence tiers before
+phrase, build a **selling-point sheet** from five evidence tiers before
 planning any image:
 
 1. **User facts** — statements from the user, quoted verbatim. Highest
    authority; never rewrite their meaning.
-2. **Observed facts** — attributes returned by a successful
+2. **Manufacturer sources** — model-matched labels, manuals, official product pages,
+   and technical documents. Record the exact URL/file and the matching model/SKU.
+3. **Observed facts** — attributes returned by a successful
    `analyzeProductImage` call: category, material, colour, construction,
    visible features, accessories, printed text. Cite only what the analysis
    actually returned.
-3. **Inferred selling points** — category-level buyer appeals derived from the
+4. **Seller-page claims** — product-page wording from a seller or marketplace listing.
+   Capture the source URL, but treat its performance claims as unverified until they
+   match the user's exact SKU or manufacturer evidence.
+5. **Inferred selling points** — category-level buyer appeals derived from the
    product type. Always label these as AI-inferred. They may drive scene,
    emotion, and composition choices, but must never introduce numbers,
    certifications, or performance claims into visible image text.
@@ -297,6 +369,14 @@ planning any image:
 Alongside the sheet, list the **unknowns that must not be invented**: exact
 dimensions, capacity, wattage, battery life, load ratings, certifications,
 warranty terms.
+
+Turn the sheet into a ranked conversion brief before slot selection. For each candidate
+selling point record: buyer concern, evidence IDs and strength, practical consequence,
+best visual proof, and any claim risk. Rank points by buyer importance, evidence
+strength, and whether a clear visual can prove them. Prefer demonstrated construction,
+real usage, fit, or package clarity over generic adjectives. Do not elevate an inferred
+category appeal into a product fact. If source facts are too thin for a numerical or
+performance slide, choose a truthful use/fit/detail slide and state the limits.
 
 Before a multi-image set, give the user one concise chance to confirm or
 supplement the sheet ("可补充卖点或纠正我提取的卖点，也可以直接生成"). This is
@@ -554,6 +634,14 @@ generation:
 - Exact short text labels to place on the image
 - Negative constraints: what must not appear
 
+Add one explicit reason each slot earns space in the gallery and what distinct buyer
+question it answers. Give the primary image the cleanest compliant presentation. Let
+secondary images use purposeful color, realistic context, perspective, small evidence-
+backed callouts, visualized mechanisms, or human scale when that helps explain the
+product and the marketplace permits it. “No text” is a per-slot design decision, not a
+default for the entire set; vary layouts so the gallery does not become repeated plain
+renders or identical badge cards.
+
 The finished shot plan is the highest-priority source for prompt writing. Do not
 re-plan slots, change layout decisions, or rewrite the plan's exact on-image text
 lines while writing prompts; when generation reveals a needed change, update the plan
@@ -664,48 +752,71 @@ Execution flow:
 
 ## STEP 1 — Generate Listing copy
 
-> The copy rules below are the **Amazon** profile. For **Temu** or **Noon**, apply that
-> platform's copy rules from `references/platforms/{temu,noon}.md` instead (Temu: short
-> concise title + 3–6 selling points, no 5-bullet/1500-char/250-byte format; Noon:
-> bilingual EN/AR title + 3–5 highlights + category attributes), then continue the
-> shared flow.
+Before drafting, read the selected profile in `references/platforms/` and its market
+entry in `platform-rules.json`. Use that market's buyer locale and category fields. If a
+required field is dynamic, import the current category template; do not invent a
+marketplace-specific field list. Keep common product facts separate from
+`listing.platform_fields` so content can be adapted without carrying one market's limits
+into another.
+
+For Shopee's initial rollout, apply `shared_image_baseline` across supported markets and
+localize copy and visible text to the selected market. Treat those image values as
+configurable project defaults, not platform-enforced limits; preserve them unless a
+verified country/category override is recorded. Keep Shopee Singapore's official
+image recommendations scoped to Singapore.
+
+Every factual line in title/highlights/description/attributes/claims must trace to the
+manifest's `fact_ids`. Unsupported claims are omitted or labeled unverified. Warranties,
+guarantees, certifications, comparison results, safety and performance claims are only
+included when the user supplied the applicable evidence/terms. Do not add a generic
+guarantee close as persuasive filler.
+
+The Amazon rules below apply to Amazon US drafting only. They are not a template for
+other marketplaces.
 
 **Title rules:**
 - `[Brand] [Core Keyword] [Key Attribute] – [Differentiator], [Context]`
-- Hard limit: 150 characters. Primary keyword in first 80 chars.
-- Capitalise Every Main Word (skip: and/for/the/with/in/of/a)
-- No ALL-CAPS words, no special chars (!$?_{}^), no promo words (Best/Free/Sale)
+- Amazon US snapshot: maximum 200 characters including spaces. Current category/title
+  validation still wins. Source: [Amazon title requirements](https://sellercentral.amazon.com/seller-forums/discussions/t/533f9cf7-3b5e-4974-b523-02e4a1a42c5f).
+- Use natural buyer language and the key identifying details. Avoid misleading promotions
+  and keyword stuffing. Amazon guidance also limits most words to two uses (excluding
+  common articles/prepositions/conjunctions) and restricts characters such as
+  `! $ ? _ { } ^ ¬ ¦`; brand-name exceptions need manual review.
 
-**5 Bullets — formula per bullet:**
+**Highlights — common Amazon 5-bullet drafting pattern (not a universal format):**
 `【ALL-CAPS LABEL】Benefit statement. Feature/spec support. Context or proof.`
-- 150–200 chars each. COSMO dimension per bullet:
+- Keep each focused and supported by a product fact. 150–200 characters is not a
+  compliance claim; check the current item-type field limit. Suggested coverage:
   - B1: capableOf + causes (function + problem solved)
   - B2: hasProperty + distinguishedFrom (material/spec + vs competitors)
   - B3: suitableFor + usedInContext (who + where)
   - B4: motivatedBy + distinguishedFrom (why buy + differentiation)
-  - B5: partOf + relatedTo (what's included + guarantee)
+  - B5: partOf + relatedTo (what is included + relevant use/care facts)
 
-**Description — 5 paragraphs, 1500-2000 chars total:**
+**Description — recommended structure, not a fixed marketplace limit:**
 1. Pain-point hook (emotional, 2-3 sentences)
 2. Product as solution (introduce product + core benefit)
 3. Feature deep-dive (expand bullets, add secondary keywords naturally)
 4. Use-case expansion (3-4 distinct usage scenarios)
-5. Brand promise / guarantee close
+5. Factual close: care, compatibility, support or warranty only if provided
 
 **Backend Search Terms:**
 - Space-separated ONLY. No commas, quotes, repeated words.
-- Hard limit: 250 bytes (exceeding invalidates ALL terms — count carefully)
-- Include: synonyms, misspellings, Spanish variants (US market), conversational phrases
+- Amazon US snapshot: keep below 250 UTF-8 bytes; avoid brand/product identifiers,
+  repeats, promotions and subjective language. Use relevant synonyms, abbreviations and
+  alternate names; Amazon says common misspellings are not needed. Source: [Amazon search terms](https://sellercentral.amazon.com/seller-forums/discussions/t/93c61d8c-5c4d-43bf-9b5a-6b3e48213aa2).
+- Store this as `listing.platform_fields.backend_search_terms`; it is not a universal SEO
+  field for other marketplaces.
 
 ---
 
 ## STEP 2 — Display listing
 
-Output in this format so each section is easy to copy. The template below is Amazon's;
-for Temu use header `🛒  TEMU LISTING · [Product]` with Title / Selling points (3–6) /
-Description / Specs / Keywords, and for Noon use `🛒  NOON LISTING · [Product]` with
-Title (EN, + AR if provided) / Highlights (3–5) / Description / Attributes / Keywords
-(see the platform profile).
+Output in a copyable format using the target marketplace's actual field names. Always
+show platform, country/site, locale, category and whether the current category schema was
+checked. Use the platform profile's field names and keep unresolved Seller Center fields
+in a separate "needs live schema" section. Do not format every site as Amazon bullets or
+keyword fields.
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -833,6 +944,15 @@ render them, call the **X-Border image MCP tools** — the current contract and 
 parameters are in `references/image-backend.md`. The skill
 never holds any image key; X-Border's server does.
 
+Before rendering, check `disallowed_listing_source_types` in the selected market's
+profile. If the requested rendering would produce a prohibited source type, do not
+deliver it as a final listing asset. For example, TikTok Shop US disallows digital
+renderings and requires actual product photography: use the skill to analyze facts,
+rank buyer concerns, write the photo shot list and listing copy, then ask for or guide
+capture of the real angles. A generated concept/reference image may be supplied only as
+a clearly labeled non-uploadable preview when the user asks for one. Never relabel a
+generated file as a photograph to pass validation.
+
 Pick the tool by intent (details in `image-backend.md`):
 
 - **Per-slot art direction (default):** render each selected slot with `generateImage`
@@ -928,8 +1048,9 @@ checked.
 
 Uploaded product photos arrive as URLs (`<image url="...">`) — pass them straight to
 `referenceImageUrl` / `imageUrls`, never base64. The `$imagegen` AS-slot briefs below are
-Amazon's; for Temu/Noon use that platform's slot taxonomy (TM/TS, NM/NS) and the same
-rendering path.
+Amazon's. Other platforms use the story beats in their profile; any slot ids we assign
+are internal labels, not official platform fields. Follow that market's image restrictions
+and rendering path.
 
 Call the backend when the user requested the full kit, image set only, or a specific
 image slot. **If the `x-border` MCP tools are unavailable**, fall back: output the
@@ -1244,27 +1365,16 @@ A+ module prompt checklist:
 Do not use "详情图" to mean AS-06. If the user asks for "详情图里的细节模块",
 generate AD-04, not AS-06, unless they explicitly say "副图细节图".
 
-**After image generation or prompt output:** remind the user:
+**When the target is Amazon**, after image generation or prompt output remind the user:
 > ⚠️ AM-01 主图：使用真实拍摄白底照片，并在上传前复核 Amazon 当前图片规则。
 
-When Excel output is requested, produce a temporary prompts JSON file keyed by
-slot id. Include all selected slots and mark omitted optional slots as skipped
-with a short reason:
+For other platforms, use that profile's primary-image and live-check reminder; do not
+show the Amazon AM-01 wording.
 
-```json
-{
-  "AM-01": "Real white-background product photo required; do not generate.",
-  "AS-02": "...",
-  "AS-03": "...",
-  "AS-04": "...",
-  "AS-05": "...",
-  "AS-06": "...",
-  "AS-07": "...",
-  "AS-08": "...",
-  "AS-09": "Skipped: no packaging or included accessory information provided.",
-  "AV-01": "..."
-}
-```
+When creating the output manifest, record each selected asset in `media` with its role,
+internal slot name, prompt/brief, source type, path, technical metadata and fact IDs. Mark
+skipped slots only when the platform profile defined them; slot names are not platform
+upload fields.
 
 ---
 
@@ -1273,20 +1383,26 @@ with a short reason:
 Skip this step in copy-only mode and image set only mode unless the user
 explicitly asks for Excel, export, save, table, or a downloadable summary file.
 
-Use the script from this skill's `scripts/` directory. Pass `--prompts-json`
-when image prompts were produced.
+For a full kit or requested export, save the normalized content, product evidence,
+selling-point sheet, locked image plan, media assets and release-review checklist as a
+JSON manifest following `references/platforms/listing-manifest.schema.json`. Record each
+image's buyer question, visual proof, layout, exact text decision and evidence IDs. Do
+not mark human release gates passed on the basis of prompts alone. Run the scoped policy
+preflight and include its findings and production-readiness status in the workbook:
 
 ```bash
-python3 /path/to/xborder-image-skill/scripts/generate_excel.py \
-  --product "[product name]" \
-  --title "[title]" \
-  --b1 "[bullet1]" --b2 "[bullet2]" --b3 "[bullet3]" \
-  --b4 "[bullet4]" --b5 "[bullet5]" \
-  --description "[description]" \
-  --backend "[backend terms]" \
-  --prompts-json "[prompts.json]" \
-  --output "Amazon_Listing_[ProductSlug].xlsx"
+python3 /path/to/xborder-image-skill/scripts/validate_listing.py listing-manifest.json
+python3 /path/to/xborder-image-skill/scripts/generate_excel.py listing-manifest.json \
+  --output "[platform]_[market]_listing.xlsx"
 ```
+
+The preflight applies deterministic checks to the manifest's declared metadata and
+evidence references; it does not decode the actual image files or make visual judgments.
+The `production_readiness` result can be `blocked`, `human_review_required`, or
+`candidate_for_manual_upload`. The candidate state requires a completed human release
+checklist and no open local findings; it is not marketplace approval. Visual truthfulness,
+seller-account eligibility, restricted-product approvals, real-file inspection and live
+category schemas remain explicit manual checks.
 
 ---
 
@@ -1295,16 +1411,16 @@ python3 /path/to/xborder-image-skill/scripts/generate_excel.py \
 Adapt the done message to the mode. Do not claim images or Excel were generated
 when the user requested copy-only output.
 
-```
+```text
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅  按本次模式输出完成
+✅ 按本次模式输出完成
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📄  Listing文案（Title + 5 Bullets + Description + Backend）[done/skip]
-🖼️  副图推荐集（5-7张或指定slot）[done/skip]
-📊  Excel汇总文件 [done/skip]
-⚠️  主图 AM-01：需真实拍摄白底图
-
-修改说："把场景图改成户外" / "Title加品牌名xxx" / "重新生成对比图"
+📍 平台 / 站点 / 类目 / 语言：[scope]
+📄 Listing 字段：[done/skip; use the selected profile's fields]
+🖼️ 图片策划/成图：[done/skip]
+📊 JSON manifest / Excel：[done/skip]
+🏭 生产状态：[blocked / concept_preview / human_review_required / candidate_for_manual_upload]
+⚠️ 未完成的类目、文件或 Seller Center 核对项：[list or none]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -1320,11 +1436,20 @@ associatedWith / instanceOf / preconditionOf / enabledBy
 
 ## Quality gates (check before finishing)
 
-- [ ] Title ≤150 chars, primary keyword in first 80
+- [ ] Platform, country/site, buyer locale and category are recorded; assumptions are labeled
+- [ ] The market-scoped profile is applied; foreign-market limits are not reused
+- [ ] Category-required fields come from a current schema or are marked unresolved
+- [ ] Numeric facts and claim text map to evidence; no generic warranty/guarantee is added
+- [ ] Full-kit/export manifest follows `listing-manifest.schema.json`; preflight findings are included
+- [ ] Production status uses the three-state release standard; synthetic/unverified test assets are never labeled as upload candidates
+- [ ] Selling-point sheet ranks buyer concerns, evidence strength, practical benefit, visual proof, and claim risk before the slot plan
+- [ ] Every generated primary/gallery asset records buyer question, visual proof, why it earns gallery space, evidence IDs, and exact text/no-text decision
+- [ ] Product-page URLs and direct image URLs are handled separately; only successfully inspected sources become evidence
+- [ ] Human release-review gates are completed against final files, not inferred from generation prompts
+- [ ] Preflight is described as a check, never as marketplace approval
 - [ ] Listing copy checks apply only when listing copy is generated
-- [ ] Each bullet 150-200 chars with ALL-CAPS label when bullets are generated
-- [ ] Description ≥1500 chars, 5 paragraphs when description is generated
-- [ ] Backend ≤250 bytes, space-separated, no repeats when backend terms are generated
+- [ ] Amazon bullet/description lengths are not presented as hard limits without current category evidence
+- [ ] Amazon US backend terms, if used, stay below 250 UTF-8 bytes and follow sourced guidance
 - [ ] ≥8 COSMO dimensions covered when listing copy is generated
 - [ ] Image generation matches requested mode; copy-only requests do not force images
 - [ ] Broad "副图" requests produce a justified 5-7 image set, not a weak forced 8
@@ -1351,8 +1476,8 @@ associatedWith / instanceOf / preconditionOf / enabledBy
 - [ ] Every image makes a deliberate layout decision: text/no text, text position, typography hierarchy, text background, product/person relationship, detail expression, and dynamic proof
 - [ ] Each image expresses its selling point correctly even if it has no headline; the product, person, detail, or annotation must carry the claim
 - [ ] Visible text, when used, has human-designed size, position, spacing, colour hierarchy, and optional background support; it does not feel auto-placed
-- [ ] Visible headlines use concrete Amazon-style feature-benefit copy, not generic poster slogans such as "Train More At Home" or "Fits Your Home Space"
-- [ ] A multi-image set varies its text/label system; do not repeat black text on white tags across several images when bolder Amazon-style bands, icons, circles, dimension labels, or large specs would fit better
+- [ ] Visible headlines use concrete buyer-facing feature-benefit language, not generic poster slogans such as "Train More At Home" or "Fits Your Home Space"
+- [ ] A multi-image set varies its visual proof and label system within the selected platform's image rules
 - [ ] Fitness-equipment images may use bold accent-colour + neutral headline hierarchy, large spec numbers, side ribbons, circular icons, diagonal detail panels, or large part close-ups when they serve the selling point; accent colour is selected from product/brand/category/reference context, not fixed to orange/red
 - [ ] Warm-home images follow Warm Real Home Ecommerce: realistic home photo feel, restrained annotations, natural warm light, no CGI showroom look
 - [ ] Images do not show AI-poster artifacts: neon glow, energy rings, fantasy light trails, black-gold button badges, oversized motivational typography, duplicated ghost athletes, or product-obscuring bodies
@@ -1361,9 +1486,9 @@ associatedWith / instanceOf / preconditionOf / enabledBy
 - [ ] Detail-page/A+ modules are not ordinary empty banners; each has one big idea, one visual event, and one environmental layer
 - [ ] A+ specs are anchored to visible product parts or floor/room context, such as footprint on the base or load proof through the frame
 - [ ] User style constraints such as "家庭风格" and "暖色" are visible in the prompt
-- [ ] Visible image text language follows user request or marketplace assumption
+- [ ] Visible image text language follows the selected site; any locale assumption is stated
 - [ ] No source watermark, shop/marketplace logo, promo badge, price tag, or Chinese overlay text carried from the uploaded photo into the output (removed per STEP 0 "Source-image hygiene")
-- [ ] Output images contain no Chinese text on a non-CN marketplace (Amazon/Temu → English, Noon → EN/AR); Chinese on the product/packaging is neutralised or replaced
+- [ ] Image text follows the selected market locale; actual product/packaging labels are preserved accurately
 - [ ] Excel generation matches requested mode; copy-only requests do not write files unless export is requested
-- [ ] AM-01 warning shown
+- [ ] Main-image guidance comes from the selected platform/market profile; do not show an Amazon warning for other platforms
 - [ ] Excel file written only when the user requested export or full-kit output

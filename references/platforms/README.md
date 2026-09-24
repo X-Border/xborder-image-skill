@@ -1,9 +1,10 @@
 # Platform profiles — multi-marketplace listing image skill
 
-This skill (X-Border Listing Image Skill) generates listing copy + listing/marketing
-images for multiple e-commerce marketplaces. Amazon is the reference implementation;
-Temu and Noon are supported. Adding another marketplace = write one profile file here,
-reuse everything else.
+This skill creates platform-adapted listing content, image plans/prompts, preflight reports,
+and a structured export. Supported profiles: Amazon, Temu, Noon, Walmart Marketplace,
+eBay, Etsy, TikTok Shop, Ozon, Shopee, and Mercado Libre. The depth of publicly verifiable
+rules differs by market. A platform name alone is not enough: country/site and category
+are required inputs before claiming an output is ready to publish.
 
 ## What is SHARED (write once, all platforms reuse)
 
@@ -14,7 +15,13 @@ reuse everything else.
   tools (`references/image-backend.md`).
 - **Image-craft principles** — thumbnail legibility, one message per image, real
   product match, no AI-poster artifacts (SKILL.md STEP 3 + `amazon-image-strategy.md`).
-- **Excel export** (`scripts/generate_excel.py`, STEP 4) and the done message (STEP 5).
+- **Structured listing manifest** (`listing-manifest.schema.json`): normalized content,
+  market/category, product evidence, images, and provenance.
+- **Excel export** (`scripts/generate_excel.py`): workbook tabs for listing fields, media,
+  product facts, and platform checks, all driven by the same manifest.
+- **Rule preflight** (`scripts/validate_listing.py`): deterministic checks only for
+  machine-verifiable rules with a source and explicit market scope, plus clearly labeled
+  project defaults that produce warnings rather than policy violations.
 
 ## What is PER-PLATFORM (one file in this folder)
 
@@ -25,24 +32,47 @@ reuse everything else.
 
 ## Files
 
-| file | status |
+| file | platform / scope |
 |---|---|
-| `amazon.md` | ✅ reference — detailed slot briefs live in `SKILL.md` STEP 1/3/3B |
-| `temu.md` | ✅ implemented |
-| `noon.md` | ✅ implemented |
+| `amazon.md` | Amazon; detailed image strategy remains in `SKILL.md` |
+| `temu.md` | Temu; public-policy gaps are marked for Seller Center verification |
+| `noon.md` | Noon; UAE/Saudi/Egypt localization and official image guidance |
+| `walmart.md` | Walmart; Canada numeric guide, US schema-driven/manual image check |
+| `ebay.md` | eBay US snapshot; item specifics and condition-aware imagery |
+| `etsy.md` | Etsy; exact-item photography, mockup exceptions and AI disclosure distinction |
+| `tiktok-shop.md` | TikTok Shop US snapshot; country/category rules remain dynamic |
+| `ozon.md` | Ozon; Seller API/category schema required at runtime |
+| `shopee.md` | Shopee; shared initial image baseline with per-market localization, Singapore recommendations separately scoped |
+| `mercado-libre.md` | Mercado Libre; CBT/site/category-specific flow |
+| `platform-rules.json` | Machine-readable sourced constraints, scope and verification status |
+| `listing-manifest.schema.json` | Canonical input/output shape |
 
 ## Resolution at runtime (SKILL.md STEP 0)
 
-Detect the platform from the request (default **Amazon**). Load that profile, apply its
-copy rules + slot taxonomy, and reuse the shared flow for everything
-else. If the user does not name a platform, ask or default to Amazon.
+Detect the platform and **require the destination market** when specs/localization differ.
+If no platform is named, use Amazon only as a drafting default and label the market
+assumption. For unsupported markets, preserve the structured content but mark platform
+limits `seller_center_check_required`; do not borrow another country's numeric limits.
+
+## Rules and evidence model
+
+- `platform-rules.json` distinguishes `enforced`, `official_guidance` and
+  `recommendation` for sourced numeric rules. Shopee's `shared_image_baseline` is an
+  explicitly unverified project default and can only produce warnings. Dynamic schemas
+  and Seller Center checks are listed separately under each scoped market's `manual_checks`.
+- Each numeric rule carries a source key, and each source records URL, scope, and review
+  date. Never use a value outside its country/site or listing-flow scope.
+- Category attributes, max photo count, restricted-product approvals and visual/content
+  truthfulness can require a live Seller Center/API check. The validator reports those
+  checks; it cannot prove them from a manifest.
+- Refresh the source and review date before changing a published profile. A source with
+  no valid market scope is not a hard rule.
 
 ## Adding a new platform (checklist)
 
-1. Copy a profile.
-2. Fill copy rules (title/bullets/description/keywords) + language(s).
-3. Define the slot taxonomy + default recommended set.
-4. Note compliance (main image, banned content, localisation).
-5. Add the platform's trigger words to `SKILL.md` frontmatter `description` + a
-   detection cue in STEP 0.
-6. Everything else (modes, backend, Excel, image craft) is inherited — do not copy.
+1. Research official country/site-specific listing and media sources.
+2. Add a focused profile and sourced machine-readable rules with status and scope.
+3. Map the platform's fields to the canonical manifest; keep category-specific fields
+   dynamic where their source schema is dynamic.
+4. Define recommended image story beats separately from actual platform constraints.
+5. Add the platform and market to the schema/validator, then update the skill router.

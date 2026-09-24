@@ -1,0 +1,257 @@
+{
+  "schema_version": "1.0.0",
+  "reviewed_on": "2026-09-24",
+  "scope_note": "Rules are scoped to a country/site and listing flow. Only rules marked enforced are suitable for automatic blocking. Official guidance and recommendations are advisory. Dynamic schemas and Seller Center requirements are listed as manual_checks and require a live check before publishing.",
+  "platforms": {
+    "amazon": {
+      "name": "Amazon",
+      "markets": {
+        "US": {
+          "locale": "en-US",
+          "title": {
+            "max_chars": {"value": 200, "status": "enforced", "source": "amazon-title-2025"},
+            "max_word_repetitions": {"value": 2, "status": "enforced", "source": "amazon-title-2025", "exclude": ["a", "an", "and", "by", "for", "in", "of", "on", "the", "to", "with"]},
+            "restricted_characters": {"value": ["!", "$", "?", "_", "{", "}", "^", "¬", "¦"], "status": "official_guidance", "source": "amazon-title-2025", "exception": "A character may be allowed when it is part of the brand name; review manually."}
+          },
+          "search_terms": {"max_bytes": {"value": 249, "status": "enforced", "source": "amazon-search-terms"}},
+          "images": [],
+          "manual_checks": ["Category-specific image count, pixel, variation and title exceptions in Seller Central", "Primary image shows the exact product on the required background; semantic checks are not automated"]
+        }
+      },
+      "sources": {
+        "amazon-title-2025": {"url": "https://sellercentral.amazon.com/seller-forums/discussions/t/533f9cf7-3b5e-4974-b523-02e4a1a42c5f", "scope": "Amazon US title policy announcement", "accessed": "2026-09-24"},
+        "amazon-images": {"url": "https://sellercentral.amazon.com/help/hub/reference/external/G1881?locale=en_us", "scope": "Amazon US product image requirements", "accessed": "2026-09-24"},
+        "amazon-search-terms": {"url": "https://sellercentral.amazon.com/seller-forums/discussions/t/93c61d8c-5c4d-43bf-9b5a-6b3e48213aa2", "scope": "Amazon US generic search term byte limit and quality guidance", "accessed": "2026-09-24"}
+      }
+    },
+    "temu": {
+      "name": "Temu",
+      "markets": {
+        "US": {
+          "locale": "en-US",
+          "title": {},
+          "images": [],
+          "manual_checks": ["Confirm current image, title, image-count, category-attribute and AI-content rules in the target Seller Center; public official specifications were not sufficient to establish universal numeric limits", "Do not mark a listing compliant based on this profile alone"]
+        }
+      },
+      "sources": {
+        "temu-seller": {"url": "https://seller.temu.com/", "scope": "Official Seller Center entry; detailed specifications may require seller access", "accessed": "2026-09-24"}
+      }
+    },
+    "noon": {
+      "name": "Noon",
+      "markets": {
+        "AE": {
+          "locale": "en-AE",
+          "title": {
+            "min_chars": {"value": 20, "status": "official_guidance", "source": "noon-titles", "note": "The same article also states 5–200 characters; 20 is the more conservative threshold from its rejection examples."},
+            "max_chars": {"value": 160, "status": "official_guidance", "source": "noon-titles", "note": "The same article also states 5–200 characters; 160 is the more conservative threshold from its rejection examples."}
+          },
+          "title_excludes_brand": true,
+          "title_policy_source": "noon-titles",
+          "media_policy_source": "noon-images",
+          "disallowed_listing_source_types": ["generated", "illustration"],
+          "manual_review_listing_source_types": ["composite", "unknown"],
+          "images": [
+            {"id": "min-width", "field": "width", "op": "min", "value": 660, "status": "enforced", "source": "noon-images"},
+            {"id": "max-file-bytes", "field": "bytes", "op": "max", "value": 10485760, "status": "enforced", "source": "noon-images"},
+            {"id": "allowed-format", "field": "format", "op": "one_of", "value": ["jpg", "jpeg"], "status": "enforced", "source": "noon-images"},
+            {"id": "min-width-height-ratio", "field": "width_height_ratio", "op": "min", "value": 0.5, "status": "enforced", "source": "noon-images"},
+            {"id": "min-resolution-ppi", "field": "resolution_ppi", "op": "min", "value": 72, "status": "enforced", "source": "noon-images"},
+            {"id": "color-space", "field": "color_space", "op": "one_of", "value": ["rgb", "srgb"], "status": "enforced", "source": "noon-images"}
+          ],
+          "manual_checks": ["Confirm current country/category-specific content and attribute requirements in Noon Seller Lab", "For non-fashion products, use a full front-view primary photo on pure white, outside packaging, with only a light shadow; no lifestyle primary image", "Check primary-image framing, uncropped product, and absence of packaging, brand/price tags, borders, watermarks or seller marks", "All gallery assets must be photographs; CAD drawings, thumbnails and illustrations are not permitted; verify any composite manually", "Keep additional-image product visibility at 70–80% and show no accessories that are not included", "Use the recommended sequence: front, back, side, other angles, details, usage; do not upload duplicate views"]
+        },
+        "SA": {"inherit": "AE", "locale": "en-SA", "manual_checks": ["Confirm Saudi-market rules and Arabic content needs in Seller Lab"]},
+        "EG": {"inherit": "AE", "locale": "en-EG", "manual_checks": ["Confirm Egypt-market rules and Arabic content needs in Seller Lab"]}
+      },
+      "sources": {
+        "noon-images": {"url": "https://helpcenter.noon.partners/en/category/product-listing/image-requirements-and-rejection-reasons-for-the-seller-sku", "scope": "Noon Seller Help Center product image requirements", "accessed": "2026-09-24"},
+        "noon-titles": {"url": "https://helpcenter.noon.partners/en/category/product-listing/title-requirements-and-rejection-reasons-for-the-seller-sku", "scope": "Noon Seller Help Center title guidance and rejection reasons; title length statements conflict within the article", "accessed": "2026-09-24"},
+        "noon-a-plus": {"url": "https://helpcenter.noon.partners/en/category/product-listing/a-content-on-noon-enhancing-your-product-pages", "scope": "Noon A+ content; separate from gallery images", "accessed": "2026-09-24"}
+      }
+    },
+    "walmart": {
+      "name": "Walmart Marketplace",
+      "markets": {
+        "CA": {
+          "locale": "en-CA",
+          "title": {},
+          "images": [
+            {"id": "min-zoom-dimensions", "field": "short_side", "op": "min", "value": 1000, "status": "official_guidance", "source": "walmart-images-ca"},
+            {"id": "recommended-size", "field": "dimensions", "op": "recommended_exact", "value": [2200, 2200], "status": "official_guidance", "source": "walmart-images-ca"},
+            {"id": "max-file-bytes", "field": "bytes", "op": "max", "value": 5242880, "status": "enforced", "source": "walmart-images-ca"},
+            {"id": "allowed-format", "field": "format", "op": "one_of", "value": ["jpg", "jpeg", "png", "bmp"], "status": "enforced", "source": "walmart-images-ca"},
+            {"id": "square", "field": "width_height_ratio", "op": "equals", "value": 1.0, "status": "official_guidance", "source": "walmart-images-ca"}
+          ],
+          "manual_checks": ["Confirm current item-type and category rules in Seller Center", "Color space, bit depth, primary-image content and media URL rules require image/file inspection"]
+        },
+        "US": {"locale": "en-US", "title": {}, "images": [], "manual_checks": ["The researched numeric image guide is scoped to Canada. Confirm current US item/category image requirements in Seller Center before publishing.", "Read the Walmart US product-type schema for required attributes and variant relationships"]}
+      },
+      "sources": {
+        "walmart-images-ca": {"url": "https://marketplacelearn.walmart.com/ca/guides/product-content-page-image-guidelines-requirements?locale=en-CA", "scope": "Walmart Canada image guide; do not silently generalize to US", "accessed": "2026-09-24"},
+        "walmart-item-types": {"url": "https://developer.walmart.com/us-marketplace/docs/post-item-setup-by-product-type-feed-file-structure-overview", "scope": "Walmart US product-type feed schemas", "accessed": "2026-09-24"},
+        "walmart-variants": {"url": "https://developer.walmart.com/us-marketplace/docs/setting-up-multiple-variants-of-an-item", "scope": "Walmart US variant relationships", "accessed": "2026-09-24"}
+      }
+    },
+    "ebay": {
+      "name": "eBay",
+      "markets": {
+        "US": {
+          "locale": "en-US",
+          "title": {},
+          "images": [
+            {"id": "min-long-side", "field": "long_side", "op": "min", "value": 500, "status": "enforced", "source": "ebay-photos"},
+            {"id": "max-file-bytes", "field": "bytes", "op": "max", "value": 12582912, "status": "enforced", "source": "ebay-photos"},
+            {"id": "max-count", "field": "count", "op": "max", "value": 24, "status": "enforced", "source": "ebay-photos"},
+            {"id": "allowed-format", "field": "format", "op": "one_of", "value": ["jpg", "jpeg", "png", "gif", "tif", "tiff", "bmp", "webp", "heic", "avif"], "status": "enforced", "source": "ebay-photos"}
+          ],
+          "manual_checks": ["Variation photos and category limits can differ; check the listing flow", "Used/damaged/defective items must use photos of the exact item, not generic stock photos", "Check image policy for added text, borders, artwork and watermarks"]
+        }
+      },
+      "sources": {
+        "ebay-picture-policy": {"url": "https://www.ebay.com/help/policies/listing-policies/picture-policy/picture-policy?id=4370", "scope": "eBay US picture policy", "accessed": "2026-09-24"},
+        "ebay-photos": {"url": "https://www.ebay.com/help/selling/listings/photos-videos?id=4148", "scope": "eBay seller photo guidance and upload limits", "accessed": "2026-09-24"},
+        "ebay-inventory": {"url": "https://developer.ebay.com/api-docs/sell/static/inventory/managing-inventory-and-offers.html", "scope": "eBay Inventory API: item specifics, aspects, image URLs", "accessed": "2026-09-24"}
+      }
+    },
+    "etsy": {
+      "name": "Etsy",
+      "markets": {
+        "US": {
+          "locale": "en-US",
+          "title": {},
+          "images": [
+            {"id": "first-image-min-side", "field": "primary_short_side", "op": "min", "value": 635, "status": "official_guidance", "source": "etsy-images"},
+            {"id": "recommended-size", "field": "short_side", "op": "min", "value": 2000, "status": "official_guidance", "source": "etsy-images"},
+            {"id": "allowed-format", "field": "one_of", "value": ["jpg", "jpeg", "png", "gif", "svg", "heic"], "status": "enforced", "source": "etsy-images"}
+          ],
+          "manual_checks": ["Confirm Etsy item eligibility and how the item was made/designed/sourced", "Primary images should be original photos of the exact product, subject to Etsy's narrow listing-image exceptions", "Check current listing image count and product-specific image rules in the listing editor", "Disclose AI use when the item itself was created using AI; generated promotional mockups are not automatically equivalent to an AI-created item"]
+        }
+      },
+      "sources": {
+        "etsy-images": {"url": "https://help.etsy.com/hc/en-us/articles/115015663347-Requirements-and-Best-Practices-for-Images-in-Your-Etsy-Shop", "scope": "Etsy shop image file, dimensions and color guidance", "accessed": "2026-09-24"},
+        "etsy-listing-images": {"url": "https://www.etsy.com/uk/legal/policy/listing-image-requirements/253962679005", "scope": "Etsy listing image originality and exceptions", "accessed": "2026-09-24"},
+        "etsy-ai-disclosure": {"url": "https://help.etsy.com/hc/en-us/articles/360024112614-What-Can-I-Sell-on-Etsy", "scope": "Seller-prompted AI creations must disclose use of AI", "accessed": "2026-09-24"}
+      }
+    },
+    "tiktok_shop": {
+      "name": "TikTok Shop",
+      "markets": {
+        "US": {
+          "locale": "en-US",
+          "media_policy_source": "tiktok-policy",
+          "title": {"recommended_min_chars": {"value": 25, "status": "official_guidance", "source": "tiktok-quality"}, "recommended_max_chars": {"value": 200, "status": "official_guidance", "source": "tiktok-add-products"}},
+          "disallowed_listing_source_types": ["generated", "illustration"],
+          "disallow_added_text": true,
+          "images": [
+            {"id": "min-dimensions", "field": "short_side", "op": "min", "value": 600, "status": "enforced", "source": "tiktok-policy"},
+            {"id": "max-count", "field": "count", "op": "max", "value": 9, "status": "enforced", "source": "tiktok-policy"},
+            {"id": "max-file-bytes", "field": "bytes", "op": "max", "value": 10485760, "status": "enforced", "source": "tiktok-add-products"},
+            {"id": "allowed-format", "field": "format", "op": "one_of", "value": ["jpg", "jpeg", "png"], "status": "enforced", "source": "tiktok-add-products"},
+            {"id": "square", "field": "width_height_ratio", "op": "equals", "value": 1.0, "status": "enforced", "source": "tiktok-policy"}
+          ],
+          "manual_checks": ["Check current category-specific fields, localized Seller Center limits and content policies", "Main image must show the front physical product against pure white; no added text, logo, border, watermark or graphic", "A quality-tier article and a listing setup guide give different title maxima; follow the current Seller Center validation"]
+        }
+      },
+      "sources": {
+        "tiktok-policy": {"url": "https://seller-us.tiktok.com/university/essay?knowledge_id=3196690250417921", "scope": "TikTok Shop US Product Listing Policy", "accessed": "2026-09-24"},
+        "tiktok-quality": {"url": "https://seller-us.tiktok.com/university/essay?knowledge_id=481891871868714", "scope": "TikTok Shop US detail-page quality tier guidance", "accessed": "2026-09-24"},
+        "tiktok-add-products": {"url": "https://seller-us.tiktok.com/university/essay?knowledge_id=6581713858676522", "scope": "TikTok Shop US add products guide", "accessed": "2026-09-24"}
+      }
+    },
+    "ozon": {
+      "name": "Ozon",
+      "markets": {
+        "RU": {
+          "locale": "ru-RU",
+          "title": {},
+          "images": [],
+          "manual_checks": ["Resolve current product type/category and required attributes from Ozon Seller API before generating final fields", "Image count and accepted fields vary by API method/version; check current Seller Center/API response", "Confirm Russian localization, restricted-category and image requirements in the target seller account"]
+        }
+      },
+      "sources": {
+        "ozon-api": {"url": "https://docs.ozon.ru/api/seller/", "scope": "Official Seller API documentation; category and method schemas are versioned", "accessed": "2026-09-24"}
+      }
+    },
+    "shopee": {
+      "name": "Shopee",
+      "shared_image_baseline": {
+        "status": "initial_project_default_unverified_per_market",
+        "applies_to": "all configured Shopee markets until per-market research provides an evidence-backed override",
+        "localize_per_market": ["listing_language", "image_text_language", "units", "currency", "market-specific product facts"],
+        "export_defaults": {
+          "aspect_ratio": "1:1",
+          "target_dimensions_px": {"width": 1024, "height": 1024},
+          "minimum_dimensions_px": {"width": 800, "height": 800},
+          "formats": ["jpg", "jpeg", "png"],
+          "max_file_bytes": 2097152,
+          "min_gallery_images": 3,
+          "max_gallery_images": 9,
+          "recommended_gallery_images": {"min": 6, "max": 8},
+          "image_story_slots": [
+            {"slot": 1, "id": "cover", "purpose": "Clean cover showing the complete item actually sold"},
+            {"slot": 2, "id": "angles-states", "purpose": "Front, side, back, opened or folded views"},
+            {"slot": 3, "id": "key-benefits", "purpose": "Two to four short, evidence-backed benefits"},
+            {"slot": 4, "id": "detail", "purpose": "Close-up of interfaces, material, construction or controls"},
+            {"slot": 5, "id": "size-capacity", "purpose": "Verified dimensions, capacity, fit or weight with units"},
+            {"slot": 6, "id": "use-scene", "purpose": "Plausible use and environment; props are not implied as included"},
+            {"slot": 7, "id": "colors-specs", "purpose": "Accurate images of available variants mapped to SKUs"},
+            {"slot": 8, "id": "package-contents", "purpose": "Actual shipped quantity, accessories, gifts and packaging"},
+            {"slot": 9, "id": "trust-notes", "purpose": "Evidence-backed material, inspection, installation or after-sales notes"}
+          ]
+        },
+        "note": "These are the user-supplied initial shared workflow defaults, not verified universal upload limits. Keep configurable and replace only with a sourced market/category override."
+      },
+      "markets": {
+        "SG": {
+          "locale": "en-SG",
+          "title": {},
+          "images": [
+            {"id": "recommended-min-dimensions", "field": "short_side", "op": "min", "value": 1024, "status": "official_guidance", "source": "shopee-images-sg"},
+            {"id": "recommended-square", "field": "width_height_ratio", "op": "equals", "value": 1.0, "status": "official_guidance", "source": "shopee-images-sg"}
+          ],
+          "manual_checks": ["This is Shopee Singapore advertising/PDP guidance, not a universal upload contract. Use the shared project baseline and record any current Seller Centre or category override", "Use actual product imagery; do not show accessories outside the order; avoid watermark/distracting graphics", "Localize title, attributes and image text to the target Shopee market"]
+        },
+        "MY": {"locale": "en-MY", "title": {}, "images": [], "manual_checks": ["Verify current Malaysia Seller Centre requirements"]},
+        "TH": {"locale": "th-TH", "title": {}, "images": [], "manual_checks": ["Verify current Thailand Seller Centre requirements and Thai localization"]},
+        "ID": {"locale": "id-ID", "title": {}, "images": [], "manual_checks": ["Verify current Indonesia Seller Centre requirements and Bahasa Indonesia localization"]},
+        "PH": {"locale": "en-PH", "title": {}, "images": [], "manual_checks": ["Verify current Philippines Seller Centre requirements"]},
+        "VN": {"locale": "vi-VN", "title": {}, "images": [], "manual_checks": ["Verify current Vietnam Seller Centre requirements and Vietnamese localization"]},
+        "TW": {"locale": "zh-TW", "title": {}, "images": [], "manual_checks": ["Verify current Taiwan Seller Centre requirements and Traditional Chinese localization"]},
+        "BR": {"locale": "pt-BR", "title": {}, "images": [], "manual_checks": ["Verify current Brazil Seller Centre requirements and Portuguese localization"]}
+      },
+      "sources": {
+        "shopee-images-sg": {"url": "https://ads.shopee.sg/learn/faq/520/172", "scope": "Shopee Singapore Ads official product-detail image recommendations; guidance only, not universal upload limits", "accessed": "2026-09-24"},
+        "shopee-mall-guidelines": {"url": "https://deo.shopeemobile.com/shopee/seller/seller_cms/b71e298c6c220f22ef6f08608dbe1bd8/Mall%20Listing%20Guidelines.pdf", "scope": "User-supplied Shopee Mall guideline PDF; current version and applicability not independently verified", "status": "unverified_user_supplied"},
+        "shopee-gallery-editorial": {"url": "https://www.pippit.ai/blog/trends/shopee-images", "scope": "Third-party gallery planning inspiration only; not used as a source for platform limits", "accessed": "2026-09-24"}
+      }
+    },
+    "mercado_libre": {
+      "name": "Mercado Libre",
+      "markets": {
+        "CBT": {
+          "locale": "en",
+          "title": {},
+          "images": [
+            {"id": "min-dimensions", "field": "short_side", "op": "min", "value": 500, "status": "enforced", "source": "meli-pictures"},
+            {"id": "max-dimensions", "field": "long_side", "op": "max", "value": 1920, "status": "enforced", "source": "meli-pictures"},
+            {"id": "max-file-bytes", "field": "bytes", "op": "max", "value": 10485760, "status": "enforced", "source": "meli-pictures"},
+            {"id": "allowed-format", "field": "format", "op": "one_of", "value": ["jpg", "jpeg", "png"], "status": "enforced", "source": "meli-pictures"}
+          ],
+          "manual_checks": ["Specify the destination site (for example MLM, MLB, MLC or MCO) and category; maximum image count and category restrictions are dynamic", "Global Selling CBT listings are created in English; confirm localized buyer-facing content and category attributes for each destination", "RGB is recommended; check listing type and category image requirements"]
+        },
+        "MLM": {"inherit": "CBT", "locale": "es-MX"},
+        "MLB": {"inherit": "CBT", "locale": "pt-BR"},
+        "MLC": {"inherit": "CBT", "locale": "es-CL"},
+        "MCO": {"inherit": "CBT", "locale": "es-CO"},
+        "MLA": {"locale": "es-AR", "title": {}, "images": [], "manual_checks": ["Local Argentina listings are outside the researched CBT image schema; query the current site/category API and seller flow"]}
+      },
+      "sources": {
+        "meli-pictures": {"url": "https://global-selling.mercadolibre.com/devsite/en_us/manage-orders-cbt/pictures", "scope": "Mercado Libre Global Selling CBT picture API; category/site max count varies", "accessed": "2026-09-24"},
+        "meli-validation": {"url": "https://global-selling.mercadolibre.com/devsite/devsite/validations-cbt", "scope": "CBT API validation errors and dynamic required category attributes", "accessed": "2026-09-24"},
+        "meli-listings": {"url": "https://global-selling.mercadolibre.com/devsite/global-listing", "scope": "Global Selling listing destinations and flow", "accessed": "2026-09-24"}
+      }
+    }
+  }
+}

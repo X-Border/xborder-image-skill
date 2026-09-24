@@ -1,7 +1,7 @@
 interface:
   display_name: "X-Border Listing Image Skill"
-  short_description: "多平台(Amazon/Temu/Noon)Listing 文案与上架图生成"
-  default_prompt: "Use $xborder-image-skill with my product photo and selling points to create a marketplace listing kit (Amazon / Temu / Noon)."
+  short_description: "多平台 Listing 内容、图片策划与规范预检"
+  default_prompt: "Use $xborder-image-skill to prepare a listing package for my target marketplace and country. Ask for the category if it affects required attributes."
 
 policy:
   allow_implicit_invocation: true

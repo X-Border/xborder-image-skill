@@ -1,330 +1,181 @@
 #!/usr/bin/env python3
-"""
-Marketplace Listing + Image Prompt Excel Generator
-Called by the xborder-image-skill after producing copy.
-Usage: python3 generate_excel.py --product "..." --title "..." ... --output "path.xlsx"
-"""
+"""Export a normalized marketplace listing manifest to a reviewable workbook."""
 
 import argparse
 import json
+import re
+import sys
 from pathlib import Path
+
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-# ── helpers ──────────────────────────────────────────────────────────────────
-def fill(h):
-    if len(h) == 6: h = "FF" + h
-    return PatternFill("solid", fgColor=h)
-
-def border(c="FFCCCCCC"):
-    s = Side(style="thin", color=c)
-    return Border(top=s, bottom=s, left=s, right=s)
-
-def wl(i=1):  return Alignment(wrap_text=True, vertical="top",    horizontal="left",   indent=i)
-def wc():     return Alignment(wrap_text=True, vertical="center", horizontal="center")
-def wlm(i=1): return Alignment(wrap_text=True, vertical="center", horizontal="left",   indent=i)
-
-def hdr(ws, row, text, bg, fg="FFFFFFFF", end="O"):
-    ws.merge_cells(f"A{row}:{end}{row}")
-    c = ws[f"A{row}"]
-    c.value = text
-    c.font = Font(name="Arial", size=11, bold=True, color=fg)
-    c.fill = fill(bg)
-    c.alignment = wlm(1)
-    ws.row_dimensions[row].height = 26
-
-def label_row(ws, row, cols_labels, bg="FF2C3E7A"):
-    for ci, (col, label, width) in enumerate(cols_labels):
-        c = ws[f"{col}{row}"]
-        c.value = label
-        c.font = Font(name="Arial", size=9, bold=True, color="FFFFFFFF")
-        c.fill = fill(bg)
-        c.alignment = wc()
-        c.border = border()
-        ws.column_dimensions[col].width = width
-    ws.row_dimensions[row].height = 36
-
-def data_cell(ws, row, col, val, bg="FFFFFFFF", fg="222222", bold=False, sz=9, height=None):
-    c = ws[f"{col}{row}"]
-    c.value = val
-    c.font = Font(name="Arial", size=sz, bold=bold, color=f"FF{fg}")
-    c.fill = fill(bg)
-    c.alignment = wl(1)
-    c.border = border()
-    if height:
-        ws.row_dimensions[row].height = height
-    return c
-
-# ════════════════════════════════════════════════════════════════════════════
-IMAGE_SLOTS = [
-    ("AM-01","主图 Main Image",      "3000x3000px","Real photo required"),
-    ("AS-02","核心卖点图",            "2000x2000px","AI allowed"),
-    ("AS-03","功能拆解图",            "2000x2000px","AI allowed"),
-    ("AS-04","尺寸参数图",            "2000x2000px","AI allowed"),
-    ("AS-05","场景使用图",            "2000x2000px","AI allowed"),
-    ("AS-06","细节特写图 (2x2)",      "2000x2000px","AI allowed"),
-    ("AS-07","竞品对比图",            "2000x2000px","AI allowed"),
-    ("AS-08","安装/使用步骤图",       "2000x2000px","AI allowed"),
-    ("AS-09","包装全家福",            "2000x2000px","AI allowed"),
-    ("AV-01","主图视频脚本",          "1920x1080px","Video script"),
-]
+from validate_listing import RULES, production_readiness, validate
 
 
-def normalize_prompts(raw):
-    if isinstance(raw, dict):
-        return [raw.get(slot, "") for slot, *_ in IMAGE_SLOTS]
-    if isinstance(raw, list):
-        prompts = list(raw[:len(IMAGE_SLOTS)])
-        prompts.extend([""] * (len(IMAGE_SLOTS) - len(prompts)))
-        return prompts
-    raise ValueError("--prompts-json must contain a list or a dict keyed by slot id")
+HEADER_FILL = PatternFill("solid", fgColor="263A5B")
+SUB_FILL = PatternFill("solid", fgColor="EAF0F8")
+WRAP_TOP = Alignment(vertical="top", wrap_text=True)
 
 
-def build_workbook(args):
-    wb = Workbook()
+def display(value):
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False)
+    if value is None:
+        return ""
+    return str(value)
 
-    # ── SHEET 1: LISTING ─────────────────────────────────────────────────────
-    ws = wb.active
-    ws.title = "Listing"
+
+def add_sheet(wb, name, title, headers, rows, widths):
+    ws = wb.create_sheet(name)
     ws.sheet_view.showGridLines = False
-    ws.sheet_properties.tabColor = "FF6900"
-
-    ws.merge_cells("A1:O1")
-    ws["A1"] = f"Amazon Listing  ·  {args.product}  ·  AI Generated"
-    ws["A1"].font  = Font(name="Arial", size=13, bold=True, color="FFFFFFFF")
-    ws["A1"].fill  = fill("1A1A2E")
-    ws["A1"].alignment = wc()
-    ws.row_dimensions[1].height = 36
-
-    # TITLE
-    hdr(ws, 2, "▌ TITLE", "FFBF360C")
-    label_row(ws, 3,
-        [("A","字段",14),("B","内容",70),("C","字符数",10),("D","合规检查",28)],
-        bg="FFE64A19")
-    data_cell(ws, 4, "A", "Title", bg="FFE8EAF6", bold=True)
-    data_cell(ws, 4, "B", args.title, bg="FFECF4FF", fg="003399", height=32)
-    ws[f"C4"].value = f"=LEN(B4)"
-    ws[f"C4"].font = Font(name="Arial", size=9, color="FF880000")
-    ws[f"C4"].fill = fill("FFFAFAFA"); ws[f"C4"].alignment = wc(); ws[f"C4"].border = border()
-    data_cell(ws, 4, "D",
-        "□ ≤150 chars  □ Primary keyword in first 80  □ No ALL CAPS  □ No promo words",
-        bg="FFF1F8E9", fg="1B5E20", sz=8)
-
-    # BULLETS
-    hdr(ws, 6, "▌ BULLET POINTS  (5×)", "FF1565C0")
-    label_row(ws, 7,
-        [("A","#",5),("B","Bullet 内容",70),("C","字符",8),("D","COSMO维度",22),("E","合规",20)],
-        bg="FF1976D2")
-    bullets = [args.b1, args.b2, args.b3, args.b4, args.b5]
-    cosmo_tags = [
-        "capableOf + causes",
-        "hasProperty + distinguishedFrom",
-        "suitableFor + usedInContext",
-        "motivatedBy + distinguishedFrom",
-        "partOf + relatedTo",
-    ]
-    checks = [
-        "□ ALL-CAPS label  □ 150-200 chars  □ Benefit first",
-        "□ Material spec included  □ Competitor contrast",
-        "□ Target user named  □ Scene described",
-        "□ Category concern addressed  □ No competitor names",
-        "□ All items listed  □ Guarantee/warranty included",
-    ]
-    for i, (b, cosmo, chk) in enumerate(zip(bullets, cosmo_tags, checks)):
-        r = 8 + i
-        bg = "FFF5F5F5" if i % 2 == 0 else "FFFFFFFF"
-        data_cell(ws, r, "A", f"B{i+1}", bg="FFE3F2FD", bold=True, fg="0D47A1")
-        data_cell(ws, r, "B", b, bg="FFECF4FF", fg="003399", height=52)
-        ws[f"C{r}"].value = f"=LEN(B{r})"
-        ws[f"C{r}"].font = Font(name="Arial",size=9,color="FF880000")
-        ws[f"C{r}"].fill = fill("FFFAFAFA"); ws[f"C{r}"].alignment = wc(); ws[f"C{r}"].border = border()
-        data_cell(ws, r, "D", cosmo, bg="FFE8EAF6", fg="1A237E", sz=8)
-        data_cell(ws, r, "E", chk, bg="FFF1F8E9", fg="1B5E20", sz=8)
-
-    # DESCRIPTION
-    hdr(ws, 14, "▌ DESCRIPTION  (target 1500-2000 chars)", "FF4A148C")
-    label_row(ws, 15,
-        [("A","内容",100),("B","字符数",10),("C","合规检查",28)],
-        bg="FF6A1B9A")
-    data_cell(ws, 16, "A", args.description, bg="FFECF4FF", fg="003399", height=120)
-    ws["B16"].value = "=LEN(A16)"
-    ws["B16"].font = Font(name="Arial",size=9,color="FF880000")
-    ws["B16"].fill = fill("FFFAFAFA"); ws["B16"].alignment = wc(); ws["B16"].border = border()
-    data_cell(ws, 16, "C",
-        "□ ≥1500 chars  □ 5 paragraphs  □ Pain→Solution→Features→Scenes→Guarantee  □ Natural language",
-        bg="FFF1F8E9", fg="1B5E20", sz=8)
-
-    # BACKEND
-    hdr(ws, 18, "▌ BACKEND SEARCH TERMS  (≤250 bytes, space-separated)", "FF1B5E20")
-    label_row(ws, 19,
-        [("A","Backend Terms",100),("B","字节数",10),("C","合规检查",28)],
-        bg="FF388E3C")
-    data_cell(ws, 20, "A", args.backend, bg="FFECF4FF", fg="003399", height=40)
-    ws["B20"].value = len(args.backend.encode("utf-8"))
-    ws["B20"].font = Font(name="Arial",size=9,color="FF880000")
-    ws["B20"].fill = fill("FFFAFAFA"); ws["B20"].alignment = wc(); ws["B20"].border = border()
-    data_cell(ws, 20, "C",
-        "□ ≤250 bytes  □ Space-separated only  □ No repeats from Title/Bullets  □ No brand names",
-        bg="FFF1F8E9", fg="1B5E20", sz=8)
-
-    ws.column_dimensions["A"].width = 80
-    ws.column_dimensions["B"].width = 10
-    ws.column_dimensions["C"].width = 28
-    ws.column_dimensions["D"].width = 22
-    ws.column_dimensions["E"].width = 22
+    ws.append([title])
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+    ws.cell(1, 1).font = Font(name="Arial", size=13, bold=True, color="FFFFFF")
+    ws.cell(1, 1).fill = HEADER_FILL
+    ws.cell(1, 1).alignment = Alignment(vertical="center")
+    ws.row_dimensions[1].height = 30
+    ws.append(headers)
+    for cell in ws[2]:
+        cell.font = Font(name="Arial", size=9, bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="45658F")
+        cell.alignment = Alignment(vertical="center", wrap_text=True)
+    ws.row_dimensions[2].height = 28
+    for row in rows:
+        ws.append([display(item) for item in row])
+        row_index = ws.max_row
+        for cell in ws[row_index]:
+            cell.alignment = WRAP_TOP
+            cell.font = Font(name="Arial", size=9, color="222222")
+            if row_index % 2:
+                cell.fill = SUB_FILL
+        ws.row_dimensions[row_index].height = 34
+    for index, width in enumerate(widths, start=1):
+        ws.column_dimensions[get_column_letter(index)].width = width
     ws.freeze_panes = "A3"
+    ws.auto_filter.ref = f"A2:{get_column_letter(len(headers))}{max(ws.max_row, 2)}"
+    return ws
 
-    # ── SHEET 2: IMAGE PROMPTS ────────────────────────────────────────────────
-    ws2 = wb.create_sheet("Image Prompts")
-    ws2.sheet_view.showGridLines = False
-    ws2.sheet_properties.tabColor = "2196F3"
 
-    ws2.merge_cells("A1:F1")
-    ws2["A1"] = f"Image Prompt Kit  ·  {args.product}  ·  9 Slots + Video"
-    ws2["A1"].font  = Font(name="Arial", size=13, bold=True, color="FFFFFFFF")
-    ws2["A1"].fill  = fill("1A237E")
-    ws2["A1"].alignment = wc()
-    ws2.row_dimensions[1].height = 36
+def text_value(item):
+    return item.get("text", "") if isinstance(item, dict) else (item or "")
 
-    # Column headers
-    img_cols = [("A","#",5),("B","图片名称",18),("C","尺寸",13),
-                ("D","AI可用",9),("E","提示词 (复制→粘贴到AI工具)",70),("F","状态",9)]
-    for col, label, width in img_cols:
-        c = ws2[f"{col}2"]
-        c.value = label
-        c.font  = Font(name="Arial", size=9, bold=True, color="FFFFFFFF")
-        c.fill  = fill("2C3E7A")
-        c.alignment = wc()
-        c.border = border()
-        ws2.column_dimensions[col].width = width
-    ws2.row_dimensions[2].height = 28
 
-    prompts_list = getattr(args, "prompts_list", [""] * len(IMAGE_SLOTS))
+def fact_references(item):
+    return ", ".join(item.get("fact_ids", [])) if isinstance(item, dict) else ""
 
-    for i, ((slot, name, size, ai_flag), prompt) in enumerate(zip(IMAGE_SLOTS, prompts_list)):
-        r = 3 + i
-        bg = "FFF5F5F5" if i % 2 == 0 else "FFFFFFFF"
-        ai_bg  = "FFFFEBEE" if "Real photo" in ai_flag else ("FFFFF8E1" if "Video" in ai_flag else "FFF1F8E9")
-        ai_fg  = "CC0000"   if "Real photo" in ai_flag else ("E65100" if "Video" in ai_flag else "1B5E20")
 
-        data_cell(ws2, r, "A", slot,     bg="FFE3F2FD", bold=True, fg="0D47A1")
-        data_cell(ws2, r, "B", name,     bg=bg)
-        data_cell(ws2, r, "C", size,     bg=bg, sz=8)
-        c = ws2[f"D{r}"]; c.value = ai_flag
-        c.font = Font(name="Arial", size=8, bold=True, color=f"FF{ai_fg}")
-        c.fill = fill(ai_bg); c.alignment = wc(); c.border = border()
-        data_cell(ws2, r, "E", prompt,   bg="FFECF4FF" if prompt else bg, fg="003399", height=70)
-        c2 = ws2[f"F{r}"]; c2.value = "待生成" if "Real photo" not in ai_flag else "待拍摄"
-        c2.font = Font(name="Arial", size=8, bold=True, color="FF5D4037")
-        c2.fill = fill("FFFFF9C4"); c2.alignment = wc(); c2.border = border()
+def build_workbook(manifest):
+    platform_key = manifest.get("platform", "unknown")
+    market = manifest.get("market", "unknown")
+    profile = RULES.get("platforms", {}).get(platform_key, {})
+    platform = profile.get("name", platform_key)
+    product = manifest.get("product", {})
+    category = manifest.get("category", {})
+    listing = manifest.get("listing", {})
+    wb = Workbook()
+    wb.remove(wb.active)
 
-    # ── SHEET 3: CHECKLIST ───────────────────────────────────────────────────
-    ws3 = wb.create_sheet("发布检查清单")
-    ws3.sheet_view.showGridLines = False
-    ws3.sheet_properties.tabColor = "43A047"
-
-    ws3.merge_cells("A1:C1")
-    ws3["A1"] = "Amazon 发布前检查清单  ·  Listing + 图片"
-    ws3["A1"].font  = Font(name="Arial", size=12, bold=True, color="FFFFFFFF")
-    ws3["A1"].fill  = fill("2E7D32")
-    ws3["A1"].alignment = wc()
-    ws3.row_dimensions[1].height = 32
-
-    checklist = [
-        ("LISTING", [
-            ("Title", "≤150字符，主关键词在前80字符，无违禁词，自然可读"),
-            ("Title", "2025年新规：无全大写、无特殊符号、无促销词(Best/Free/Sale)"),
-            ("Bullets", "5条，每条150-200字符，全大写标签开头，利益优先"),
-            ("Bullets", "前400字符合计覆盖最重要信息（手机端截断点）"),
-            ("Description", "1500-2000字符，5段式结构，语言自然，无关键词堆砌"),
-            ("Backend", "≤250字节，空格分隔，无重复词，无品牌名"),
-            ("COSMO", "≥8个COSMO语义维度已覆盖（见算法说明Sheet）"),
-            ("Rufus", "Listing可回答'谁用/在哪用/解决什么问题'"),
-        ]),
-        ("IMAGES", [
-            ("主图AM-01", "真实拍摄，纯白背景#FFFFFF，产品≥85%，无文字/logo，≥1600px"),
-            ("主图AM-01", "150px缩略图测试：手机搜索结果可识别产品"),
-            ("副图×8", "每张图内容与Listing对应文案一致（数字/材质/功能）"),
-            ("副图×8", "AI生成图可用于AS-02至AS-09，不可用于主图"),
-            ("所有图", "推荐3000×3000px，最低1600×1600px，JPEG RGB格式"),
-            ("A+", "A+图片不能与主图/副图重复（否则审核被拒）"),
-            ("视频", "≥720p，≤5GB，MP4/MOV，45-90秒，前5秒有产品亮相"),
-        ]),
-        ("上架", [
-            ("Seller Central", "分类节点准确（影响COSMO语义分类）"),
-            ("属性字段", "Target Audience / Intended Use / Subject Matter 填写完整"),
-            ("价格", "参考BSR Top20竞品定价区间，首次上架可低5-10%获评价"),
-            ("FBA/FBM", "FBA优先（影响Buy Box获取）"),
-            ("上线后", "第1周检查Title是否被Amazon自动修改（2025年新规）"),
-            ("监控", "每2周检查关键词排名，每季度重新做竞品ASIN分析"),
-        ]),
+    listing_rows = [
+        ("Platform", platform), ("Market / site", market), ("Locale", manifest.get("locale")),
+        ("Product", product.get("name")), ("Brand", product.get("brand")),
+        ("Model", product.get("model")), ("Seller SKU", product.get("seller_sku")),
+        ("GTIN", product.get("gtin")), ("Condition", product.get("condition")),
+        ("Category", category.get("name")), ("Category ID", category.get("id")),
+        ("Category schema", category.get("schema_source")),
+        ("Title", text_value(listing.get("title"))),
+        ("Title fact IDs", fact_references(listing.get("title"))),
+        ("Description", text_value(listing.get("description"))),
+        ("Description fact IDs", fact_references(listing.get("description"))),
     ]
+    for index, item in enumerate(listing.get("highlights", []), start=1):
+        listing_rows.extend([(f"Highlight {index}", text_value(item)), (f"Highlight {index} fact IDs", fact_references(item))])
+    for index, item in enumerate(listing.get("disclosures", []), start=1):
+        listing_rows.extend([(f"Disclosure {index}", text_value(item)), (f"Disclosure {index} fact IDs", fact_references(item))])
+    for index, item in enumerate(listing.get("attributes", []), start=1):
+        listing_rows.append((f"Attribute {index}", {key: value for key, value in item.items()}))
+    if listing.get("search_terms"):
+        listing_rows.append(("Search terms", listing.get("search_terms")))
+    if listing.get("platform_fields"):
+        listing_rows.append(("Platform fields", listing.get("platform_fields")))
+    if product.get("variants"):
+        listing_rows.append(("Variants", product.get("variants")))
+    add_sheet(wb, "Listing", f"{platform} listing · {product.get('name', '')}", ["Field", "Value"], listing_rows, [28, 105])
 
-    for col, w in [("A", 12), ("B", 22), ("C", 60)]:
-        ws3.column_dimensions[col].width = w
+    media_rows = []
+    for item in manifest.get("media", []):
+        media_rows.append((
+            item.get("id"), item.get("role"), item.get("slot_name"), item.get("source_type"),
+            item.get("path") or item.get("url"), item.get("width"), item.get("height"),
+            item.get("bytes"), item.get("format"), item.get("background"),
+            item.get("contains_text"), item.get("prompt"), ", ".join(item.get("fact_ids", [])),
+            ", ".join(item.get("variant_ids", [])), item.get("buyer_question"),
+            item.get("visual_proof"), item.get("layout"), item.get("on_image_text"),
+            item.get("why_gallery_slot"),
+        ))
+    add_sheet(wb, "Media", "Image / video assets · specs and prompts", [
+        "ID", "Role", "Slot", "Source type", "File / URL", "Width", "Height", "Bytes", "Format", "Background", "Text overlay", "Prompt / brief", "Fact IDs", "Variant IDs", "Buyer question", "Visual proof", "Layout", "Exact on-image text", "Why this slot"
+    ], media_rows, [16, 15, 24, 16, 42, 10, 10, 14, 12, 18, 14, 70, 18, 18, 36, 42, 32, 35, 40])
 
-    r = 2
-    for section, items in checklist:
-        ws3.merge_cells(f"A{r}:C{r}")
-        c = ws3[f"A{r}"]
-        c.value = f"  ▌ {section}"
-        c.font  = Font(name="Arial", size=10, bold=True, color="FFFFFFFF")
-        c.fill  = fill("388E3C" if section == "IMAGES" else ("1565C0" if section == "LISTING" else "FF6F00"))
-        c.alignment = wlm(1); c.border = border()
-        ws3.row_dimensions[r].height = 22; r += 1
+    fact_rows = []
+    for fact in manifest.get("facts", []):
+        fact_rows.append((fact.get("id"), fact.get("field"), fact.get("value"), fact.get("source_type"), fact.get("confidence"), fact.get("evidence"), fact.get("source_url")))
+    add_sheet(wb, "Product Facts", "Evidence ledger · claims must map back to these facts", [
+        "Fact ID", "Field", "Value", "Source type", "Confidence", "Evidence / note", "Source URL"
+    ], fact_rows, [16, 22, 36, 22, 14, 48, 48])
 
-        for field, desc in items:
-            c = ws3[f"A{r}"]; c.value = "□"
-            c.font = Font(name="Arial", size=11); c.fill = fill("FFFFFFFF")
-            c.alignment = wc(); c.border = border()
-            c = ws3[f"B{r}"]; c.value = field
-            c.font = Font(name="Arial", size=8, bold=True, color="FF222222")
-            c.fill = fill("FFF5F5F5"); c.alignment = wl(1); c.border = border()
-            c = ws3[f"C{r}"]; c.value = desc
-            c.font = Font(name="Arial", size=8, color="FF444444")
-            c.fill = fill("FFFFFFFF"); c.alignment = wl(1); c.border = border()
-            ws3.row_dimensions[r].height = 20; r += 1
-        r += 1  # spacer
+    sheet = manifest.get("selling_point_sheet", {})
+    point_rows = [("Buyer question", question) for question in sheet.get("buyer_questions", [])]
+    for index, point in enumerate(sheet.get("points", []), start=1):
+        point_rows.extend([
+            (f"Point {index}", point.get("point")),
+            (f"Point {index} · evidence tier / fact IDs", f"{point.get('evidence_tier')} / {', '.join(point.get('fact_ids', []))}"),
+            (f"Point {index} · buyer concern / benefit", f"{point.get('buyer_concern')} / {point.get('buyer_benefit', '')}"),
+            (f"Point {index} · visual proof / claim risk", f"{point.get('visual_proof')} / {point.get('claim_risk', '')}"),
+        ])
+    point_rows.extend(("Unknown / do not invent", value) for value in sheet.get("unknowns", []))
+    point_rows.extend(("Excluded claim", value) for value in sheet.get("excluded_claims", []))
+    add_sheet(wb, "Selling Points", "Buyer concerns · evidenced points · proof plan", ["Planning item", "Value"], point_rows, [38, 110])
 
-    # ── Sheet order ───────────────────────────────────────────────────────────
-    order = ["Listing", "Image Prompts", "发布检查清单"]
-    smap  = {s.title: s for s in wb._sheets}
-    wb._sheets = [smap[n] for n in order if n in smap]
-
+    findings = validate(manifest)
+    readiness = production_readiness(manifest, findings)
+    reviewed_on = RULES.get("reviewed_on")
+    check_rows = [("Profile reviewed on", reviewed_on), ("Market", market), ("Production readiness", readiness["status"]), ("Readiness note", readiness["note"]), ("Category schema source", category.get("schema_source")), ("Category schema fetched at", category.get("schema_fetched_at")), ("Seller Center check status", manifest.get("policy_snapshot", {}).get("manual_check_status", "not_checked")), ("Seller Center checked at", manifest.get("policy_snapshot", {}).get("seller_center_checked_at"))]
+    for field, value in manifest.get("release_review", {}).items():
+        check_rows.append((f"Release review · {field}", value))
+    for index, finding in enumerate(findings, start=1):
+        source = finding.get("source", {})
+        check_rows.append((f"{finding['level'].upper()} · {finding['code']}", finding["message"] + (f"\n{source.get('url')}" if source.get("url") else "")))
+    if not findings:
+        check_rows.append(("Preflight", "No automated findings. Complete the live Seller Center/category checks before publishing."))
+    add_sheet(wb, "Preflight & Sources", "Policy preflight · warnings do not equal approval", ["Check", "Result / source"], check_rows, [34, 110])
+    wb.properties.title = f"{platform} listing package"
+    wb.properties.subject = f"Market {market}; rule snapshot {reviewed_on}"
     return wb
 
 
-# ════════════════════════════════════════════════════════════════════════════
-def parse_args():
-    p = argparse.ArgumentParser()
-    p.add_argument("--product",     default="Product")
-    p.add_argument("--title",       default="")
-    p.add_argument("--b1",          default="")
-    p.add_argument("--b2",          default="")
-    p.add_argument("--b3",          default="")
-    p.add_argument("--b4",          default="")
-    p.add_argument("--b5",          default="")
-    p.add_argument("--description", default="")
-    p.add_argument("--backend",     default="")
-    p.add_argument("--output",      default="Amazon_Listing.xlsx")
-    # Image prompts as a JSON file path (optional — skill writes this)
-    p.add_argument("--prompts-json", default=None)
-    return p.parse_args()
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("manifest", help="Path to listing manifest JSON")
+    parser.add_argument("--output", help="Workbook path; defaults to platform_market_listing.xlsx")
+    args = parser.parse_args()
+    try:
+        with Path(args.manifest).open(encoding="utf-8") as stream:
+            manifest = json.load(stream)
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Cannot read manifest: {exc}", file=sys.stderr)
+        return 2
+    if not isinstance(manifest, dict):
+        print("Manifest root must be a JSON object.", file=sys.stderr)
+        return 2
+    safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", f"{manifest.get('platform', 'listing')}_{manifest.get('market', 'market')}").strip("_")
+    output = Path(args.output or f"{safe_name}_listing.xlsx")
+    output.parent.mkdir(parents=True, exist_ok=True) if output.parent != Path(".") else None
+    build_workbook(manifest).save(output)
+    print(f"Workbook saved: {output}")
+    return 0
 
 
 if __name__ == "__main__":
-    args = parse_args()
-
-    # Load image prompts if provided
-    if args.prompts_json:
-        with open(args.prompts_json, encoding="utf-8") as f:
-            args.prompts_list = normalize_prompts(json.load(f))
-    else:
-        args.prompts_list = ["(Prompt will be filled in by Codex)"] * len(IMAGE_SLOTS)
-
-    wb = build_workbook(args)
-    output = Path(args.output)
-    output.parent.mkdir(parents=True, exist_ok=True) if output.parent != Path(".") else None
-    wb.save(output)
-    print(f"✅  Saved: {args.output}")
+    raise SystemExit(main())
